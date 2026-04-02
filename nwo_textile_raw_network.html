@@ -195,6 +195,66 @@
   #graph-wrap { flex: 1; position: relative; overflow: hidden; }
   svg#graph { width: 100%; height: 100%; background: var(--bg); }
 
+  /* ── Project list panel ── */
+  #proj-panel {
+    width: 260px;
+    min-width: 260px;
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #proj-panel-hd {
+    padding: 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  #proj-panel-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    flex: 1;
+  }
+  #proj-dl-btn {
+    font-size: 10px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 3px;
+    padding: 3px 8px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #proj-dl-btn:hover { opacity: 0.85; }
+  #proj-list { overflow-y: auto; flex: 1; padding: 4px; }
+  #proj-list::-webkit-scrollbar { width: 4px; }
+  #proj-list::-webkit-scrollbar-track { background: var(--panel); }
+  #proj-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .proj-item {
+    padding: 5px 6px;
+    border-radius: 3px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .proj-item:hover { background: var(--panel2); }
+  .proj-item .proj-title { font-size: 10px; color: var(--text); line-height: 1.3; }
+  .proj-item .proj-meta  { font-size: 9px;  color: var(--text-dim); margin-top: 2px; }
+  .proj-dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    margin-right: 3px;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+
   /* ── Loading ── */
   #loading {
     position: absolute; inset: 0;
@@ -311,6 +371,15 @@
     </div>
     <div id="tooltip"></div>
   </div>
+
+  <!-- ── Project list ── -->
+  <div id="proj-panel">
+    <div id="proj-panel-hd">
+      <span id="proj-panel-title">Projects in view</span>
+      <button id="proj-dl-btn">⬇ CSV</button>
+    </div>
+    <div id="proj-list"></div>
+  </div>
 </div>
 
 <script>
@@ -367,7 +436,8 @@ function fundColor(s) { return FUND_COLOR[fundKey(s)] || FUND_COLOR.other; }
 // ═══════════════════════════════════════════════════════════════
 let allProjects  = [];      // all 4090 annotated
 let keywords     = [...DEFAULT_KEYWORDS];  // current keyword list
-let activeKw     = new Set();  // EMPTY = show all; non-empty = filter
+// textile/textiel/garment/fashion on by default; empty = show all
+let activeKw     = new Set(['textile','textiel','garment','fashion']);
 let activeFund   = new Set();
 let searchQ      = '';
 let showLabels   = false;
@@ -446,7 +516,9 @@ function kwCount(kw) {
 function buildKwChecks() {
   const div = document.getElementById('kw-checks');
   div.innerHTML = '';
-  keywords.forEach(kw => {
+  // Sort by hit count descending, stable (preserves insertion order on ties)
+  const sorted = [...keywords].sort((a, b) => kwCount(b) - kwCount(a));
+  sorted.forEach(kw => {
     const count = kwCount(kw);
     const id    = 'kw_' + kw.replace(/\W/g, '_');
     const row   = document.createElement('div');
@@ -646,6 +718,8 @@ function render() {
   document.getElementById('stats').textContent =
     `${nP} projects · ${nI} institutions · ${links.length} links${kwLabel}`;
 
+  updateProjectList(projects);
+
   if (simulation) simulation.stop();
   linkG.selectAll('*').remove();
   nodeG.selectAll('*').remove();
@@ -740,6 +814,58 @@ function render() {
     })
     .on('end', fitView);
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  Project list panel
+// ═══════════════════════════════════════════════════════════════
+function updateProjectList(projects) {
+  const title = document.getElementById('proj-panel-title');
+  const list  = document.getElementById('proj-list');
+  title.textContent = `Projects in view (${projects.length})`;
+  list.innerHTML = '';
+  [...projects]
+    .sort((a, b) => (a.title_en || '').localeCompare(b.title_en || ''))
+    .forEach(p => {
+      const item  = document.createElement('div');
+      item.className = 'proj-item';
+      const color = fundColor(p.funding_scheme);
+      const start = (p.start_date || '').slice(0, 4);
+      const end   = (p.end_date   || '').slice(0, 4);
+      item.innerHTML = `
+        <div class="proj-title">
+          <span class="proj-dot" style="background:${color}"></span>${escHtml(p.title_en || p.project_id)}
+        </div>
+        <div class="proj-meta">${escHtml(p._pi_institution || '—')} · ${start}–${end}</div>`;
+      if (p.project_page_url) {
+        item.addEventListener('click', () => window.open(p.project_page_url, '_blank'));
+      }
+      list.appendChild(item);
+    });
+}
+
+document.getElementById('proj-dl-btn').addEventListener('click', () => {
+  const projects = filterProjects();
+  const header = ['project_id','title','funding_scheme','start_date','end_date',
+                  'pi_name','pi_institution','matched_keywords','nwo_url'];
+  const rows = projects.map(p => [
+    p.project_id,
+    p.title_en,
+    p.funding_scheme,
+    (p.start_date || '').slice(0, 10),
+    (p.end_date   || '').slice(0, 10),
+    p._pi_name,
+    p._pi_institution,
+    matchTerms(p).join('; '),
+    p.project_page_url,
+  ].map(v => `"${String(v || '').replace(/"/g, '""')}"`).join(','));
+  const csv  = [header.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = 'nwo_textile_projects.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
 
 function fitView() {
   const nodes = nodeG.selectAll('circle').data();
