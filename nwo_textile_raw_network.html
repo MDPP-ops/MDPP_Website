@@ -718,14 +718,14 @@ function render() {
   // ── Simulation ──
   simulation = d3.forceSimulation(nodes)
     .force('link',   d3.forceLink(links).id(d=>d.id)
-                       .distance(d => d.source.type==='project' ? 22 : 18)
-                       .strength(0.7))
-    .force('charge', d3.forceManyBody().strength(d => d.type==='project' ? -18 : -8))
-    .force('collide',d3.forceCollide(d => d.type==='project' ? 8 : 4))
-    .force('center', d3.forceCenter(W/2, H/2).strength(0.18))
-    .force('x',      d3.forceX(W/2).strength(0.10))
-    .force('y',      d3.forceY(H/2).strength(0.10))
-    .alphaDecay(0.025)
+                       .distance(d => d.source.type==='project' ? 55 : 40)
+                       .strength(0.35))
+    .force('charge', d3.forceManyBody().strength(d => d.type==='project' ? -80 : -35))
+    .force('collide',d3.forceCollide(d => d.type==='project' ? 10 : 6))
+    .force('center', d3.forceCenter(W/2, H/2).strength(0.06))
+    .force('x',      d3.forceX(W/2).strength(0.04))
+    .force('y',      d3.forceY(H/2).strength(0.04))
+    .alphaDecay(0.022)
     .on('tick', ticked)
     .on('end',  fitView);
 
