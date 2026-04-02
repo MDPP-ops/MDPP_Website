@@ -110,26 +110,6 @@
   }
   .section-hd button:hover { color: var(--text); border-color: var(--text-dim); }
 
-  /* Keyword pills */
-  .kw-pills { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 4px 6px; }
-  .kw-pill {
-    font-size: 10px;
-    padding: 2px 7px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    background: var(--panel2);
-    color: var(--text-dim);
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.12s, color 0.12s, border-color 0.12s;
-    display: flex;
-    align-items: center;
-    gap: 3px;
-  }
-  .kw-pill.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
-  .kw-pill .pill-x { font-size: 9px; opacity: 0.6; margin-left: 2px; }
-  .kw-pill .pill-x:hover { opacity: 1; }
-
   /* Add-keyword input row */
   .kw-add-row {
     display: flex;
@@ -159,6 +139,19 @@
     cursor: pointer;
   }
   #kw-add-btn:hover { opacity: 0.85; }
+
+  /* Remove button on keyword rows */
+  .kw-remove {
+    font-size: 10px;
+    color: var(--text-dim);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0 2px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .kw-remove:hover { color: var(--red); }
 
   /* Checkboxes */
   .check-row {
@@ -260,9 +253,10 @@
       <!-- Keywords -->
       <div class="section-hd">
         Keywords
-        <button id="btn-kw-clear">show all</button>
+        <button id="btn-kw-all">all</button>
+        <button id="btn-kw-clear">none</button>
       </div>
-      <div class="kw-pills" id="kw-pills"></div>
+      <div id="kw-checks"></div>
       <!-- Add keyword -->
       <div class="kw-add-row">
         <input type="text" id="kw-input" placeholder="add keyword…">
@@ -442,45 +436,56 @@ function matchTerms(p) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  Keyword pill UI
+//  Keyword checkbox UI  (with per-keyword counts)
 // ═══════════════════════════════════════════════════════════════
-function buildKwPills() {
-  const container = document.getElementById('kw-pills');
-  container.innerHTML = '';
+function kwCount(kw) {
+  // count against the full annotated dataset
+  return allProjects.filter(p => p._hay.includes(kw.toLowerCase())).length;
+}
+
+function buildKwChecks() {
+  const div = document.getElementById('kw-checks');
+  div.innerHTML = '';
   keywords.forEach(kw => {
-    const pill = document.createElement('span');
-    pill.className = 'kw-pill' + (activeKw.has(kw) ? ' active' : '');
-    pill.dataset.kw = kw;
-    // label + remove ×
-    const lbl = document.createElement('span');
-    lbl.textContent = kw;
-    const x = document.createElement('span');
-    x.className = 'pill-x';
-    x.textContent = '×';
-    x.title = 'Remove keyword';
-    x.addEventListener('click', ev => {
-      ev.stopPropagation();
+    const count = kwCount(kw);
+    const id    = 'kw_' + kw.replace(/\W/g, '_');
+    const row   = document.createElement('div');
+    row.className = 'check-row';
+    row.innerHTML = `
+      <input type="checkbox" id="${id}" data-kw="${kw}"${activeKw.has(kw) ? ' checked' : ''}>
+      <label for="${id}">${kw}</label>
+      <span class="badge">${count}</span>`;
+    // remove button
+    const rm = document.createElement('button');
+    rm.className = 'kw-remove';
+    rm.title = 'Remove keyword';
+    rm.textContent = '×';
+    rm.addEventListener('click', () => {
       keywords = keywords.filter(k => k !== kw);
       activeKw.delete(kw);
-      buildKwPills();
+      buildKwChecks();
       render();
     });
-    pill.appendChild(lbl);
-    pill.appendChild(x);
-    pill.addEventListener('click', () => {
-      if (activeKw.has(kw)) activeKw.delete(kw);
-      else activeKw.add(kw);
-      pill.classList.toggle('active', activeKw.has(kw));
+    row.appendChild(rm);
+    row.querySelector('input').addEventListener('change', e => {
+      if (e.target.checked) activeKw.add(kw); else activeKw.delete(kw);
       render();
     });
-    container.appendChild(pill);
+    div.appendChild(row);
   });
 }
 
-// "Show all" clears active keywords
+// "all" checks every keyword
+document.getElementById('btn-kw-all').addEventListener('click', () => {
+  keywords.forEach(k => activeKw.add(k));
+  buildKwChecks();
+  render();
+});
+
+// "none" unchecks all → show every project
 document.getElementById('btn-kw-clear').addEventListener('click', () => {
   activeKw.clear();
-  buildKwPills();
+  buildKwChecks();
   render();
 });
 
@@ -498,7 +503,7 @@ function addKeyword() {
   keywords.push(val);
   activeKw.add(val);   // auto-activate new keyword
   document.getElementById('kw-input').value = '';
-  buildKwPills();
+  buildKwChecks();
   render();
 }
 
@@ -767,7 +772,7 @@ async function autoLoad() {
       document.getElementById('loading-msg').textContent = `Annotating ${raw.length} projects…`;
       await new Promise(r => setTimeout(r, 30));
       allProjects = annotate(raw);
-      buildKwPills();
+      buildKwChecks();
       buildFundFilters();
       document.getElementById('loading').style.display = 'none';
       render();
