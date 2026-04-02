@@ -19,11 +19,8 @@
     --red:         #e53935;
     --purple:      #9c27b0;
     --teal:        #00bcd4;
-    --pink:        #e91e63;
-    --orange:      #ff5722;
     --node-proj:   #f5a623;
     --node-inst:   #4a90d9;
-    --link:        #3a3a6a;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -52,27 +49,19 @@
   #stats { margin-left: auto; font-size: 11px; color: var(--text-dim); white-space: nowrap; }
 
   /* ── Layout ── */
-  .main-layout {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-  }
+  .main-layout { display: flex; flex: 1; overflow: hidden; }
 
   /* ── Sidebar ── */
   aside {
-    width: 220px;
-    min-width: 220px;
+    width: 230px;
+    min-width: 230px;
     background: var(--panel);
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     overflow: hidden;
   }
-  .sidebar-scroll {
-    overflow-y: auto;
-    flex: 1;
-    padding: 8px;
-  }
+  .sidebar-scroll { overflow-y: auto; flex: 1; padding: 8px; }
   .sidebar-scroll::-webkit-scrollbar { width: 4px; }
   .sidebar-scroll::-webkit-scrollbar-track { background: var(--panel); }
   .sidebar-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
@@ -107,6 +96,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 4px;
   }
   .section-hd button {
     font-size: 9px;
@@ -116,8 +106,59 @@
     border-radius: 3px;
     padding: 1px 5px;
     cursor: pointer;
+    white-space: nowrap;
   }
   .section-hd button:hover { color: var(--text); border-color: var(--text-dim); }
+
+  /* Keyword pills */
+  .kw-pills { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 4px 6px; }
+  .kw-pill {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--panel2);
+    color: var(--text-dim);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .kw-pill.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+  .kw-pill .pill-x { font-size: 9px; opacity: 0.6; margin-left: 2px; }
+  .kw-pill .pill-x:hover { opacity: 1; }
+
+  /* Add-keyword input row */
+  .kw-add-row {
+    display: flex;
+    gap: 4px;
+    padding: 2px 4px 6px;
+  }
+  #kw-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    padding: 3px 6px;
+    font-size: 11px;
+    outline: none;
+  }
+  #kw-input:focus { border-color: var(--accent); }
+  #kw-input::placeholder { color: var(--text-dim); }
+  #kw-add-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  #kw-add-btn:hover { opacity: 0.85; }
 
   /* Checkboxes */
   .check-row {
@@ -149,80 +190,24 @@
     flex-shrink: 0;
   }
 
-  /* Keyword pill toggles */
-  .kw-pills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 4px;
-  }
-  .kw-pill {
-    font-size: 10px;
-    padding: 2px 8px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    background: var(--panel2);
-    color: var(--text-dim);
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.15s, color 0.15s;
-  }
-  .kw-pill.active {
-    background: var(--accent);
-    color: #000;
-    border-color: var(--accent);
-    font-weight: 600;
-  }
-
-  /* Divider */
   .divider { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
 
-  /* Display toggles */
-  .toggle-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 3px 4px;
-  }
+  .toggle-row { display: flex; align-items: center; gap: 6px; padding: 3px 4px; }
   .toggle-row label { font-size: 11px; color: var(--text-dim); }
 
-  /* Legend */
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 2px 4px;
-    font-size: 11px;
-    color: var(--text-dim);
-  }
-  .legend-dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
+  .legend-item { display: flex; align-items: center; gap: 6px; padding: 2px 4px; font-size: 11px; color: var(--text-dim); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
-  /* ── Graph canvas ── */
-  #graph-wrap {
-    flex: 1;
-    position: relative;
-    overflow: hidden;
-  }
-  svg#graph {
-    width: 100%;
-    height: 100%;
-    background: var(--bg);
-  }
+  /* ── Graph ── */
+  #graph-wrap { flex: 1; position: relative; overflow: hidden; }
+  svg#graph { width: 100%; height: 100%; background: var(--bg); }
 
-  /* ── Loading overlay ── */
+  /* ── Loading ── */
   #loading {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg);
-    z-index: 200;
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: var(--bg); z-index: 200;
   }
   #loading .spinner {
     width: 36px; height: 36px;
@@ -260,22 +245,29 @@
 <header>
   <div>
     <h1>NWO · Textile &amp; Fashion Research Network — Full Raw Dataset</h1>
-    <div class="subtitle">Force-directed graph · keyword-filtered · projects ↔ institutions</div>
+    <div class="subtitle">Force-directed graph · projects ↔ institutions · keyword filter optional</div>
   </div>
   <div id="stats">Loading…</div>
 </header>
 
 <div class="main-layout">
-  <!-- ── Sidebar ── -->
   <aside>
     <div class="search-wrap">
-      <input type="text" id="search" placeholder="Search projects…">
+      <input type="text" id="search" placeholder="Search title / PI / institution…">
     </div>
     <div class="sidebar-scroll">
 
-      <!-- Keyword filter pills -->
-      <div class="section-hd">Keywords (match any)</div>
+      <!-- Keywords -->
+      <div class="section-hd">
+        Keywords
+        <button id="btn-kw-clear">show all</button>
+      </div>
       <div class="kw-pills" id="kw-pills"></div>
+      <!-- Add keyword -->
+      <div class="kw-add-row">
+        <input type="text" id="kw-input" placeholder="add keyword…">
+        <button id="kw-add-btn">+</button>
+      </div>
 
       <hr class="divider">
 
@@ -291,7 +283,7 @@
       <!-- Display toggles -->
       <div class="section-hd">Display</div>
       <div class="toggle-row">
-        <input type="checkbox" id="show-labels" checked>
+        <input type="checkbox" id="show-labels">
         <label for="show-labels">Project labels</label>
       </div>
       <div class="toggle-row">
@@ -317,7 +309,6 @@
     </div>
   </aside>
 
-  <!-- ── Graph ── -->
   <div id="graph-wrap">
     <svg id="graph"></svg>
     <div id="loading">
@@ -329,23 +320,32 @@
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════
-//  Guard: ensure D3 loaded
-// ═══════════════════════════════════════════════════════════════
 if (typeof d3 === 'undefined') {
   document.getElementById('loading').innerHTML =
-    '<h2 style="color:#e53935">D3.js failed to load</h2>' +
-    '<p>Check your internet connection and reload.</p>';
+    '<p style="color:#e53935">D3.js failed to load. Check your connection and reload.</p>';
   throw new Error('D3 not available');
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  Original keyword list used to identify textile/fashion projects
+//  Default keyword list — textile/fashion domain (NL + EN)
+//  Excludes: leer (learn), stof (substance), mode (method),
+//            print (too broad) — Dutch false-positives
 // ═══════════════════════════════════════════════════════════════
-const ALL_KEYWORDS = ['textile', 'textiel', 'fashion', 'garment'];
+const DEFAULT_KEYWORDS = [
+  'textile','textiel','fashion','garment',
+  'wool','wol','cotton','katoen',
+  'fiber','fibre','vezel',
+  'weven','kleding','kleiding',
+  'garen','zijde','polyester','denim','leather',
+  'fabric','dye',
+  'circulair','circular','recycl','upcycl',
+  'hergebruik','biobased','wearable',
+  'supply chain','waardeketen','levenscyclus',
+  'biomaterial','coating','hemp','hennep',
+];
 
 // ═══════════════════════════════════════════════════════════════
-//  Funding scheme helpers
+//  Funding helpers
 // ═══════════════════════════════════════════════════════════════
 const FUND_ORDER = ['nwa','raak-pro','raak-mkb','raak-publiek','kiem'];
 const FUND_COLOR = {
@@ -359,40 +359,39 @@ const FUND_COLOR = {
 function fundKey(scheme) {
   if (!scheme) return 'other';
   const s = scheme.toLowerCase();
-  for (const k of FUND_ORDER) if (s.includes(k.replace('-',''))) return k;
-  // handle variants: "raak pro" without hyphen
-  if (s.includes('raak') && s.includes('pro'))    return 'raak-pro';
-  if (s.includes('raak') && s.includes('mkb'))    return 'raak-mkb';
-  if (s.includes('raak') && s.includes('publ'))   return 'raak-publiek';
-  if (s.includes('kiem'))                          return 'kiem';
-  if (s.includes('nwa'))                           return 'nwa';
+  if (s.includes('nwa'))                        return 'nwa';
+  if (s.includes('raak') && s.includes('pro'))  return 'raak-pro';
+  if (s.includes('raak') && s.includes('mkb'))  return 'raak-mkb';
+  if (s.includes('raak') && s.includes('publ')) return 'raak-publiek';
+  if (s.includes('kiem'))                       return 'kiem';
   return 'other';
 }
-function fundColor(scheme) { return FUND_COLOR[fundKey(scheme)] || FUND_COLOR.other; }
+function fundColor(s) { return FUND_COLOR[fundKey(s)] || FUND_COLOR.other; }
 
 // ═══════════════════════════════════════════════════════════════
 //  State
 // ═══════════════════════════════════════════════════════════════
-let allProjects  = [];          // parsed + annotated from raw
-let activeKw     = new Set(ALL_KEYWORDS);
+let allProjects  = [];      // all 4090 annotated
+let keywords     = [...DEFAULT_KEYWORDS];  // current keyword list
+let activeKw     = new Set();  // EMPTY = show all; non-empty = filter
 let activeFund   = new Set();
 let searchQ      = '';
-let showLabels   = true;
+let showLabels   = false;
 let showInst     = true;
 let showOrphan   = false;
 let simulation   = null;
 
 // ═══════════════════════════════════════════════════════════════
-//  SVG / zoom setup
+//  SVG / zoom
 // ═══════════════════════════════════════════════════════════════
-const svg   = d3.select('#graph');
-const zoomG = svg.append('g').attr('class','zoom-root');
-const linkG = zoomG.append('g').attr('class','links');
-const nodeG = zoomG.append('g').attr('class','nodes');
-const labelG= zoomG.append('g').attr('class','labels');
+const svg    = d3.select('#graph');
+const zoomG  = svg.append('g');
+const linkG  = zoomG.append('g');
+const nodeG  = zoomG.append('g');
+const labelG = zoomG.append('g');
 
 const zoom = d3.zoom()
-  .scaleExtent([0.05, 10])
+  .scaleExtent([0.02, 10])
   .on('zoom', e => zoomG.attr('transform', e.transform));
 svg.call(zoom);
 svg.on('dblclick.zoom', () =>
@@ -403,92 +402,117 @@ svg.on('dblclick.zoom', () =>
 // ═══════════════════════════════════════════════════════════════
 const tooltip = document.getElementById('tooltip');
 function showTip(evt, html) {
-  tooltip.innerHTML = html;
-  tooltip.style.display = 'block';
-  moveTip(evt);
+  tooltip.innerHTML = html; tooltip.style.display = 'block'; moveTip(evt);
 }
 function moveTip(evt) {
   const r = document.getElementById('graph-wrap').getBoundingClientRect();
   let x = evt.clientX - r.left + 14, y = evt.clientY - r.top + 14;
   if (x + 310 > r.width)  x = evt.clientX - r.left - 320;
   if (y + 200 > r.height) y = evt.clientY - r.top  - 210;
-  tooltip.style.left = x + 'px';
-  tooltip.style.top  = y + 'px';
+  tooltip.style.left = x + 'px'; tooltip.style.top = y + 'px';
 }
 function hideTip() { tooltip.style.display = 'none'; }
 
 // ═══════════════════════════════════════════════════════════════
-//  Annotate raw projects: extract PI, terms, normalise fields
+//  Annotate raw projects
 // ═══════════════════════════════════════════════════════════════
 function annotate(raw) {
   return raw.map(p => {
-    // searchable text
     const hay = [p.title, p.summary_nl, p.summary_en]
       .filter(Boolean).join(' ').toLowerCase();
-
-    // matched keywords
-    const terms = ALL_KEYWORDS.filter(k => hay.includes(k));
-
-    // PI: prefer Main Applicant, then Project leader, then first member
     const members = p.project_members || [];
     const pi = members.find(m => /main applicant/i.test(m.role || ''))
             || members.find(m => /project leader/i.test(m.role || ''))
-            || members[0]
-            || null;
-    const piName = pi ? `${pi.first_name || ''} ${pi.last_name || ''}`.trim() : '';
-    const piInst = pi ? (pi.organisation || '').split('||')[0].trim() : '';
-
+            || members[0] || null;
     return {
       ...p,
-      title_en:         p.title || '',
-      _matched_terms:   terms,
-      _pi_name:         piName,
-      _pi_institution:  piInst,
-      project_page_url: p.project_id
-        ? `https://www.nwo.nl/projecten/${p.project_id}` : '',
+      title_en:        p.title || '',
+      _hay:            hay,
+      _matched_terms:  [],   // computed per render by matchTerms()
+      _pi_name:        pi ? `${pi.first_name||''} ${pi.last_name||''}`.trim() : '',
+      _pi_institution: pi ? (pi.organisation||'').split('||')[0].trim() : '',
+      project_page_url: `https://www.nwo.nl/projecten/${p.project_id}`,
     };
   });
 }
 
+// Re-compute matched terms against current keyword list
+function matchTerms(p) {
+  return keywords.filter(k => p._hay.includes(k.toLowerCase()));
+}
+
 // ═══════════════════════════════════════════════════════════════
-//  Build keyword pill toggles
+//  Keyword pill UI
 // ═══════════════════════════════════════════════════════════════
 function buildKwPills() {
   const container = document.getElementById('kw-pills');
   container.innerHTML = '';
-  ALL_KEYWORDS.forEach(kw => {
+  keywords.forEach(kw => {
     const pill = document.createElement('span');
-    pill.className = 'kw-pill active';
-    pill.textContent = kw;
+    pill.className = 'kw-pill' + (activeKw.has(kw) ? ' active' : '');
     pill.dataset.kw = kw;
+    // label + remove ×
+    const lbl = document.createElement('span');
+    lbl.textContent = kw;
+    const x = document.createElement('span');
+    x.className = 'pill-x';
+    x.textContent = '×';
+    x.title = 'Remove keyword';
+    x.addEventListener('click', ev => {
+      ev.stopPropagation();
+      keywords = keywords.filter(k => k !== kw);
+      activeKw.delete(kw);
+      buildKwPills();
+      render();
+    });
+    pill.appendChild(lbl);
+    pill.appendChild(x);
     pill.addEventListener('click', () => {
-      if (activeKw.has(kw)) {
-        // keep at least one active
-        if (activeKw.size === 1) return;
-        activeKw.delete(kw);
-        pill.classList.remove('active');
-      } else {
-        activeKw.add(kw);
-        pill.classList.add('active');
-      }
+      if (activeKw.has(kw)) activeKw.delete(kw);
+      else activeKw.add(kw);
+      pill.classList.toggle('active', activeKw.has(kw));
       render();
     });
     container.appendChild(pill);
   });
 }
 
+// "Show all" clears active keywords
+document.getElementById('btn-kw-clear').addEventListener('click', () => {
+  activeKw.clear();
+  buildKwPills();
+  render();
+});
+
+// Add-keyword input
+document.getElementById('kw-add-btn').addEventListener('click', addKeyword);
+document.getElementById('kw-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addKeyword();
+});
+function addKeyword() {
+  const val = document.getElementById('kw-input').value.trim().toLowerCase();
+  if (!val || keywords.includes(val)) {
+    document.getElementById('kw-input').value = '';
+    return;
+  }
+  keywords.push(val);
+  activeKw.add(val);   // auto-activate new keyword
+  document.getElementById('kw-input').value = '';
+  buildKwPills();
+  render();
+}
+
 // ═══════════════════════════════════════════════════════════════
-//  Build funding-type checkboxes (dynamic from data)
+//  Funding filter
 // ═══════════════════════════════════════════════════════════════
-function buildFundFilters(projects) {
+function buildFundFilters() {
   const fundCount = {};
-  projects.forEach(p => {
+  allProjects.forEach(p => {
     const k = fundKey(p.funding_scheme);
     fundCount[k] = (fundCount[k] || 0) + 1;
   });
   const order = [...FUND_ORDER, 'other'].filter(k => fundCount[k]);
   activeFund = new Set(order);
-
   const div = document.getElementById('fund-checks');
   div.innerHTML = '';
   order.forEach(k => {
@@ -509,100 +533,82 @@ function buildFundFilters(projects) {
 
 document.getElementById('btn-all-fund').addEventListener('click', () => {
   document.querySelectorAll('[data-fund]').forEach(cb => {
-    cb.checked = true;
-    activeFund.add(cb.dataset.fund);
+    cb.checked = true; activeFund.add(cb.dataset.fund);
   });
   render();
 });
 
-// ── Display toggles ──
+// Display toggles
 document.getElementById('show-labels').addEventListener('change', e => { showLabels = e.target.checked; render(); });
 document.getElementById('show-inst').addEventListener('change',   e => { showInst   = e.target.checked; render(); });
 document.getElementById('show-orphan').addEventListener('change', e => { showOrphan = e.target.checked; render(); });
 
-// ── Search ──
+// Search
 document.getElementById('search').addEventListener('input', e => {
-  searchQ = e.target.value.trim().toLowerCase();
-  render();
+  searchQ = e.target.value.trim().toLowerCase(); render();
 });
 
 // ═══════════════════════════════════════════════════════════════
-//  Filter projects
+//  Filter
 // ═══════════════════════════════════════════════════════════════
 function filterProjects() {
   return allProjects.filter(p => {
-    // must match at least one active keyword
-    if (!p._matched_terms.some(t => activeKw.has(t))) return false;
-
-    // funding filter
+    // keyword filter: if any keywords active, project must match at least one
+    if (activeKw.size > 0) {
+      const terms = matchTerms(p);
+      if (!terms.some(t => activeKw.has(t))) return false;
+    }
+    // funding
     if (!activeFund.has(fundKey(p.funding_scheme))) return false;
-
-    // free-text search
+    // free-text
     if (searchQ) {
-      const hay = [
-        p.title_en, p.summary_en, p.summary_nl,
-        p._pi_name, p._pi_institution,
-        p.project_id, p.funding_scheme,
-      ].filter(Boolean).join(' ').toLowerCase();
+      const hay = [p.title_en, p.summary_en, p.summary_nl,
+                   p._pi_name, p._pi_institution, p.project_id,
+                   p.funding_scheme].filter(Boolean).join(' ').toLowerCase();
       if (!hay.includes(searchQ)) return false;
     }
-
     return true;
   });
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  Build graph data (nodes + links)
+//  Build graph
 // ═══════════════════════════════════════════════════════════════
 function buildGraph(projects) {
-  const nodes = [], links = [];
-  const instMap = new Map();
-
+  const nodes = [], links = [], instMap = new Map();
   projects.forEach(p => {
     const pid   = String(p.project_id || Math.random().toString(36).slice(2));
     const title = p.title_en || pid;
-    const pNode = {
-      id:        pid,
-      type:      'project',
+    nodes.push({
+      id: pid, type: 'project',
       label:     title.length > 45 ? title.slice(0,42)+'…' : title,
       fullTitle: title,
       scheme:    p.funding_scheme || '',
-      start:     (p.start_date || '').slice(0, 4),
-      end:       (p.end_date   || '').slice(0, 4),
+      start:     (p.start_date || '').slice(0,4),
+      end:       (p.end_date   || '').slice(0,4),
       pi:        p._pi_name || '',
       piInst:    p._pi_institution || '',
-      terms:     p._matched_terms || [],
+      terms:     matchTerms(p),
       url:       p.project_page_url || '',
-      r: 6,
-    };
-    nodes.push(pNode);
-
-    const members = p.project_members || [];
-    const orgsForProject = new Set();
-    members.forEach(m => {
+      r: 5,
+    });
+    (p.project_members || []).forEach(m => {
       const orgStr = m.organisation || m.organization || '';
       orgStr.split('||').map(s => s.trim()).filter(s => s.length > 2).forEach(org => {
-        if (orgsForProject.has(org)) return;
-        orgsForProject.add(org);
         if (!instMap.has(org)) {
-          const iNode = {
-            id:        'inst_' + org,
-            type:      'institution',
+          instMap.set(org, {
+            id: 'inst_' + org, type: 'institution',
             label:     org.length > 35 ? org.slice(0,32)+'…' : org,
-            fullLabel: org,
-            r: 4,
-            count: 0,
-          };
-          instMap.set(org, iNode);
-          nodes.push(iNode);
+            fullLabel: org, r: 3, count: 0,
+          });
+          nodes.push(instMap.get(org));
         }
         instMap.get(org).count++;
         links.push({ source: pid, target: 'inst_' + org });
       });
     });
   });
-
-  instMap.forEach(n => { n.r = Math.min(3 + n.count * 0.8, 10); });
+  instMap.forEach(n => { n.r = Math.min(2 + n.count * 0.5, 9); });
   return { nodes, links };
 }
 
@@ -618,8 +624,6 @@ function render() {
     nodes = rawNodes.filter(n => n.type === 'project');
     links = [];
   } else {
-    const instDegree = {};
-    rawLinks.forEach(l => { instDegree[l.target] = (instDegree[l.target]||0) + 1; });
     nodes = rawNodes.filter(n => {
       if (n.type === 'project') return true;
       const deg = rawLinks.filter(l => l.target === n.id || l.source === n.id).length;
@@ -629,11 +633,13 @@ function render() {
     links = rawLinks.filter(l => nodeIds.has(l.source) && nodeIds.has(l.target));
   }
 
-  // stats
   const nP = nodes.filter(n => n.type==='project').length;
   const nI = nodes.filter(n => n.type==='institution').length;
+  const kwLabel = activeKw.size > 0
+    ? ` · filtered by ${activeKw.size} keyword${activeKw.size>1?'s':''}`
+    : ' · all projects';
   document.getElementById('stats').textContent =
-    `${nP} projects · ${nI} institutions · ${links.length} links`;
+    `${nP} projects · ${nI} institutions · ${links.length} links${kwLabel}`;
 
   if (simulation) simulation.stop();
   linkG.selectAll('*').remove();
@@ -643,34 +649,29 @@ function render() {
 
   const W = svg.node().clientWidth  || 900;
   const H = svg.node().clientHeight || 600;
-
   nodes.forEach(n => {
     if (n.x === undefined) {
-      n.x = W/2 + (Math.random()-0.5)*100;
-      n.y = H/2 + (Math.random()-0.5)*100;
+      n.x = W/2 + (Math.random()-0.5)*200;
+      n.y = H/2 + (Math.random()-0.5)*200;
     }
   });
 
-  // ── Links ──
-  const link = linkG.selectAll('line')
-    .data(links).join('line')
+  const link = linkG.selectAll('line').data(links).join('line')
     .attr('stroke', '#2a2a5a')
-    .attr('stroke-width', 0.8)
-    .attr('stroke-opacity', 0.6);
+    .attr('stroke-width', 0.6)
+    .attr('stroke-opacity', 0.5);
 
-  // ── Nodes ──
-  const node = nodeG.selectAll('circle')
-    .data(nodes, d => d.id).join('circle')
+  const node = nodeG.selectAll('circle').data(nodes, d => d.id).join('circle')
     .attr('r', d => d.r)
     .attr('fill', d => d.type==='project' ? fundColor(d.scheme) : '#4a90d9')
-    .attr('fill-opacity', d => d.type==='project' ? 0.9 : 0.65)
+    .attr('fill-opacity', d => d.type==='project' ? 0.85 : 0.6)
     .attr('stroke', d => d.type==='project' ? '#fff' : '#aaa')
-    .attr('stroke-width', d => d.type==='project' ? 0.8 : 0.4)
+    .attr('stroke-width', d => d.type==='project' ? 0.7 : 0.3)
     .style('cursor', 'pointer')
     .call(d3.drag()
-      .on('start', dragStart)
-      .on('drag',  dragged)
-      .on('end',   dragEnd))
+      .on('start', (evt,d) => { if(!evt.active) simulation.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
+      .on('drag',  (evt,d) => { d.fx=evt.x; d.fy=evt.y; })
+      .on('end',   (evt,d) => { if(!evt.active) simulation.alphaTarget(0); d.fx=null; d.fy=null; }))
     .on('mouseover', (evt, d) => {
       let html;
       if (d.type === 'project') {
@@ -689,129 +690,97 @@ function render() {
       }
       showTip(evt, html);
       link.attr('stroke-opacity', l =>
-          (l.source.id===d.id||l.target.id===d.id) ? 1 : 0.08)
+          (l.source.id===d.id||l.target.id===d.id) ? 1 : 0.06)
         .attr('stroke', l =>
           (l.source.id===d.id||l.target.id===d.id) ? '#f5a623' : '#2a2a5a');
       node.attr('fill-opacity', n =>
         n.id===d.id ? 1 :
         links.some(l=>(l.source.id===d.id&&l.target.id===n.id)||(l.target.id===d.id&&l.source.id===n.id))
-          ? 0.95 : 0.2);
+          ? 0.95 : 0.15);
     })
     .on('mousemove', moveTip)
     .on('mouseout', () => {
       hideTip();
-      link.attr('stroke-opacity', 0.6).attr('stroke', '#2a2a5a');
-      node.attr('fill-opacity', d => d.type==='project' ? 0.9 : 0.65);
+      link.attr('stroke-opacity', 0.5).attr('stroke', '#2a2a5a');
+      node.attr('fill-opacity', d => d.type==='project' ? 0.85 : 0.6);
     })
     .on('click', (evt, d) => { if (d.url) window.open(d.url, '_blank'); });
 
-  // ── Labels ──
   labelG.selectAll('text')
     .data(showLabels ? nodes.filter(n=>n.type==='project') : [], d => d.id)
     .join('text')
     .text(d => d.label)
-    .attr('font-size', '7px')
+    .attr('font-size', '6px')
     .attr('fill', '#ccccee')
     .attr('pointer-events', 'none')
-    .attr('dy', d => -d.r - 2);
+    .attr('dy', d => -d.r - 1);
 
-  // ── Simulation ──
+  // Physics tuned for large (4000+) node counts
   simulation = d3.forceSimulation(nodes)
     .force('link',   d3.forceLink(links).id(d=>d.id)
                        .distance(d => d.source.type==='project' ? 55 : 40)
                        .strength(0.35))
-    .force('charge', d3.forceManyBody().strength(d => d.type==='project' ? -80 : -35))
-    .force('collide',d3.forceCollide(d => d.type==='project' ? 10 : 6))
-    .force('center', d3.forceCenter(W/2, H/2).strength(0.06))
-    .force('x',      d3.forceX(W/2).strength(0.04))
-    .force('y',      d3.forceY(H/2).strength(0.04))
-    .alphaDecay(0.022)
-    .on('tick', ticked)
-    .on('end',  fitView);
+    .force('charge', d3.forceManyBody().strength(d => d.type==='project' ? -80 : -35)
+                       .distanceMax(300))
+    .force('collide', d3.forceCollide(d => d.type==='project' ? 6 : 3))
+    .force('center',  d3.forceCenter(W/2, H/2).strength(0.06))
+    .force('x',       d3.forceX(W/2).strength(0.04))
+    .force('y',       d3.forceY(H/2).strength(0.04))
+    .alphaDecay(0.03)
+    .on('tick', () => {
+      link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
+          .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+      node.attr('cx',d=>d.x).attr('cy',d=>d.y);
+      labelG.selectAll('text').attr('x',d=>d.x).attr('y',d=>d.y);
+    })
+    .on('end', fitView);
+}
 
-  function ticked() {
-    link
-      .attr('x1', d=>d.source.x).attr('y1', d=>d.source.y)
-      .attr('x2', d=>d.target.x).attr('y2', d=>d.target.y);
-    node.attr('cx', d=>d.x).attr('cy', d=>d.y);
-    labelG.selectAll('text').attr('x', d=>d.x).attr('y', d=>d.y);
-  }
-
-  // ── Auto-fit: zoom to bounding box of all nodes ──
-  function fitView() {
-    const pad = 40;
-    let x0=Infinity, y0=Infinity, x1=-Infinity, y1=-Infinity;
-    nodes.forEach(n => {
-      x0=Math.min(x0,n.x-n.r); y0=Math.min(y0,n.y-n.r);
-      x1=Math.max(x1,n.x+n.r); y1=Math.max(y1,n.y+n.r);
-    });
-    const bW=x1-x0||1, bH=y1-y0||1;
-    const scale = Math.min(0.95, Math.min((W-pad*2)/bW, (H-pad*2)/bH));
-    const tx = W/2 - scale*(x0+bW/2);
-    const ty = H/2 - scale*(y0+bH/2);
-    svg.transition().duration(800)
-      .call(zoom.transform, d3.zoomIdentity.translate(tx,ty).scale(scale));
-  }
-
-  function dragStart(evt, d) {
-    if (!evt.active) simulation.alphaTarget(0.3).restart();
-    d.fx=d.x; d.fy=d.y;
-  }
-  function dragged(evt, d) { d.fx=evt.x; d.fy=evt.y; }
-  function dragEnd(evt, d) {
-    if (!evt.active) simulation.alphaTarget(0);
-    d.fx=null; d.fy=null;
-  }
+function fitView() {
+  const nodes = nodeG.selectAll('circle').data();
+  if (!nodes.length) return;
+  const pad = 40;
+  let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+  nodes.forEach(n => {
+    x0=Math.min(x0,n.x-n.r); y0=Math.min(y0,n.y-n.r);
+    x1=Math.max(x1,n.x+n.r); y1=Math.max(y1,n.y+n.r);
+  });
+  const W = svg.node().clientWidth || 900, H = svg.node().clientHeight || 600;
+  const bW=x1-x0||1, bH=y1-y0||1;
+  const scale = Math.min(0.95, Math.min((W-pad*2)/bW, (H-pad*2)/bH));
+  const tx = W/2 - scale*(x0+bW/2), ty = H/2 - scale*(y0+bH/2);
+  svg.transition().duration(800)
+    .call(zoom.transform, d3.zoomIdentity.translate(tx,ty).scale(scale));
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  Ingest annotated data
+//  Load
 // ═══════════════════════════════════════════════════════════════
-function ingest(raw) {
-  document.getElementById('loading-msg').textContent = 'Annotating projects…';
-  // yield to browser paint, then process
-  setTimeout(() => {
-    allProjects = annotate(raw);
-    // keep only projects that match at least one keyword
-    const matched = allProjects.filter(p => p._matched_terms.length > 0);
-    allProjects = matched;
-
-    buildKwPills();
-    buildFundFilters(allProjects);
-
-    document.getElementById('loading').style.display = 'none';
-    render();
-  }, 30);
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  Auto-load nwo_textile_raw.json
-// ═══════════════════════════════════════════════════════════════
-(async function autoLoad() {
-  const candidates = [
-    'nwo_textile_raw.json',
-    './nwo_textile_raw.json',
-  ];
-  for (const url of candidates) {
+async function autoLoad() {
+  for (const url of ['nwo_textile_raw.json', './nwo_textile_raw.json']) {
     try {
       document.getElementById('loading-msg').textContent = `Fetching ${url}…`;
       const resp = await fetch(url);
       if (!resp.ok) continue;
-      const data = await resp.json();
-      ingest(data);
+      document.getElementById('loading-msg').textContent = 'Parsing JSON…';
+      const raw = await resp.json();
+      document.getElementById('loading-msg').textContent = `Annotating ${raw.length} projects…`;
+      await new Promise(r => setTimeout(r, 30));
+      allProjects = annotate(raw);
+      buildKwPills();
+      buildFundFilters();
+      document.getElementById('loading').style.display = 'none';
+      render();
       return;
-    } catch (_) { /* try next */ }
+    } catch(_) {}
   }
   document.getElementById('loading').innerHTML =
-    '<p style="color:#e53935">Could not load nwo_textile_raw.json.<br>Serve this file over HTTP alongside the JSON.</p>';
-})();
+    '<p style="color:#e53935">Could not load nwo_textile_raw.json.<br>Serve this file over HTTP alongside the HTML.</p>';
+}
+autoLoad();
 
-// ═══════════════════════════════════════════════════════════════
-//  Utilities
-// ═══════════════════════════════════════════════════════════════
 function escHtml(s) {
-  return String(s||'')
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 </script>
