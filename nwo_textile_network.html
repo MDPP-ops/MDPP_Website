@@ -709,15 +709,16 @@ function render() {
   // ── Simulation ──
   simulation = d3.forceSimulation(nodes)
     .force('link', d3.forceLink(links).id(d=>d.id).distance(d =>
-      d.source.type==='project' ? 35 : 28).strength(0.5))
+      d.source.type==='project' ? 22 : 18).strength(0.7))
     .force('charge', d3.forceManyBody().strength(d =>
-      d.type==='project' ? -30 : -15))
-    .force('collide', d3.forceCollide(d => d.type==='project' ? 9 : 5))
-    .force('center', d3.forceCenter(W/2, H/2).strength(0.12))
-    .force('x', d3.forceX(W/2).strength(0.06))
-    .force('y', d3.forceY(H/2).strength(0.06))
+      d.type==='project' ? -18 : -8))
+    .force('collide', d3.forceCollide(d => d.type==='project' ? 8 : 4))
+    .force('center', d3.forceCenter(W/2, H/2).strength(0.18))
+    .force('x', d3.forceX(W/2).strength(0.10))
+    .force('y', d3.forceY(H/2).strength(0.10))
     .alphaDecay(0.025)
-    .on('tick', ticked);
+    .on('tick', ticked)
+    .on('end', fitView);
 
   function ticked() {
     link
@@ -727,6 +728,24 @@ function render() {
       .attr('cx', d => d.x).attr('cy', d => d.y);
     label
       .attr('x', d => d.x).attr('y', d => d.y);
+  }
+
+  // ── Auto-fit: zoom to show all nodes with padding after simulation settles ──
+  function fitView() {
+    const padding = 40;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    nodes.forEach(n => {
+      x0 = Math.min(x0, n.x - n.r);
+      y0 = Math.min(y0, n.y - n.r);
+      x1 = Math.max(x1, n.x + n.r);
+      y1 = Math.max(y1, n.y + n.r);
+    });
+    const bW = x1 - x0 || 1, bH = y1 - y0 || 1;
+    const scale = Math.min(0.95, Math.min((W - padding*2) / bW, (H - padding*2) / bH));
+    const tx = W/2 - scale * (x0 + bW/2);
+    const ty = H/2 - scale * (y0 + bH/2);
+    svg.transition().duration(800)
+      .call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
   }
 
   function dragStart(evt, d) {
