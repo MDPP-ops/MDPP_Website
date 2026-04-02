@@ -2,664 +2,817 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NWO — Fashion &amp; Textile Research Network</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NWO SIA Textile &amp; Fashion Research Network</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:          #1a1a2e;
+    --panel:       #16213e;
+    --panel2:      #0f3460;
+    --border:      #2a2a5a;
+    --text:        #e0e0f0;
+    --text-dim:    #8888aa;
+    --accent:      #f5a623;
+    --accent2:     #4a90d9;
+    --green:       #4caf50;
+    --red:         #e53935;
+    --purple:      #9c27b0;
+    --teal:        #00bcd4;
+    --pink:        #e91e63;
+    --orange:      #ff5722;
+    --node-proj:   #f5a623;
+    --node-inst:   #4a90d9;
+    --link:        #3a3a6a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
 
-body {
-  font-family: 'Segoe UI', system-ui, Arial, sans-serif;
-  background: #0f1117;
-  color: #d0d8e8;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
-}
+  /* ── Header ── */
+  header {
+    background: var(--panel2);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  header h1 { font-size: 15px; font-weight: 600; color: var(--accent); white-space: nowrap; }
+  header .subtitle { font-size: 11px; color: var(--text-dim); }
+  #stats { margin-left: auto; font-size: 11px; color: var(--text-dim); white-space: nowrap; }
 
-/* ── Header ─────────────────────────────────────────── */
-#header {
-  background: #161922;
-  border-bottom: 1px solid #252836;
-  padding: 7px 14px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-  z-index: 10;
-}
-#app-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #8898c0;
-  white-space: nowrap;
-  letter-spacing: .3px;
-}
-#search {
-  flex: 1;
-  max-width: 260px;
-  background: #1e2130;
-  border: 1px solid #303450;
-  border-radius: 5px;
-  padding: 5px 10px;
-  color: #d0d8e8;
-  font-size: 12px;
-  outline: none;
-  transition: border-color .2s;
-}
-#search:focus { border-color: #4a6ad0; }
-#search::placeholder { color: #4a5570; }
-#status-pill {
-  font-size: 11px;
-  color: #5a6a8a;
-  white-space: nowrap;
-}
-#load-btn {
-  background: #263a70;
-  border: 1px solid #3a50a0;
-  color: #c0cce8;
-  padding: 5px 11px;
-  border-radius: 5px;
-  font-size: 11px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background .2s;
-}
-#load-btn:hover { background: #2e4888; }
+  /* ── Layout ── */
+  .main-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
 
-/* ── Body layout ─────────────────────────────────────── */
-#body {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-}
+  /* ── Sidebar ── */
+  aside {
+    width: 220px;
+    min-width: 220px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-scroll {
+    overflow-y: auto;
+    flex: 1;
+    padding: 8px;
+  }
+  .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+  .sidebar-scroll::-webkit-scrollbar-track { background: var(--panel); }
+  .sidebar-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-/* ── Sidebar ─────────────────────────────────────────── */
-#sidebar {
-  width: 200px;
-  min-width: 200px;
-  background: #12141e;
-  border-right: 1px solid #1e2130;
-  overflow-y: auto;
-  padding: 10px 10px 20px;
-  flex-shrink: 0;
-}
-#sidebar::-webkit-scrollbar { width: 3px; }
-#sidebar::-webkit-scrollbar-thumb { background: #252836; border-radius: 2px; }
+  /* Search */
+  .search-wrap {
+    padding: 8px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  #search {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    padding: 5px 8px;
+    font-size: 12px;
+    outline: none;
+  }
+  #search:focus { border-color: var(--accent); }
+  #search::placeholder { color: var(--text-dim); }
 
-.sec-head {
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 1.4px;
-  text-transform: uppercase;
-  color: #404870;
-  margin: 16px 0 5px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid #1e2130;
-}
-.sec-head:first-of-type { margin-top: 4px; }
+  /* Section headers */
+  .section-hd {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 8px 4px 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .section-hd button {
+    font-size: 9px;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 3px;
+    padding: 1px 5px;
+    cursor: pointer;
+  }
+  .section-hd button:hover { color: var(--text); border-color: var(--text-dim); }
 
-#server-notice {
-  background: #14201a;
-  border: 1px solid #1e3828;
-  border-radius: 5px;
-  padding: 7px 9px;
-  margin-bottom: 8px;
-  font-size: 10.5px;
-  color: #4a8060;
-  line-height: 1.55;
-}
-#server-notice code {
-  background: #0c1810;
-  padding: 1px 4px;
-  border-radius: 3px;
-  font-family: monospace;
-  font-size: 10px;
-}
-#server-notice.hidden { display: none; }
+  /* Checkboxes */
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .check-row:hover { background: var(--panel2); }
+  .check-row input[type=checkbox] { accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+  .check-row label {
+    flex: 1;
+    font-size: 11px;
+    color: var(--text);
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .check-row .badge {
+    font-size: 9px;
+    background: var(--panel2);
+    color: var(--text-dim);
+    border-radius: 8px;
+    padding: 0 5px;
+    flex-shrink: 0;
+  }
 
-/* filter rows */
-.f-row {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 2.5px 3px;
-  cursor: pointer;
-  border-radius: 4px;
-  user-select: none;
-}
-.f-row:hover { background: #1a1d2a; }
-.f-row input[type=checkbox] {
-  accent-color: #4a6ad0;
-  cursor: pointer;
-  width: 12px;
-  height: 12px;
-  flex-shrink: 0;
-}
-.f-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.f-label {
-  font-size: 11.5px;
-  color: #a0aac8;
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.f-count {
-  font-size: 10px;
-  color: #404870;
-  min-width: 20px;
-  text-align: right;
-}
+  /* Divider */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
 
-/* display toggles */
-.tog-row {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 2.5px 3px;
-  cursor: pointer;
-  border-radius: 4px;
-}
-.tog-row:hover { background: #1a1d2a; }
-.tog-row input { accent-color: #4a6ad0; cursor: pointer; }
-.tog-label { font-size: 11.5px; color: #8090b0; }
+  /* Display toggles */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 4px;
+  }
+  .toggle-row label { font-size: 11px; color: var(--text-dim); }
 
-/* ── Graph canvas ─────────────────────────────────────── */
-#graph-wrap {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-}
-#graph { width: 100%; height: 100%; display: block; }
+  /* Legend */
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 4px;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
 
-/* ── Tooltip ─────────────────────────────────────────── */
-#tooltip {
-  position: absolute;
-  background: #1a1d2a;
-  border: 1px solid #2e3248;
-  border-radius: 7px;
-  padding: 9px 12px;
-  font-size: 11.5px;
-  line-height: 1.55;
-  pointer-events: none;
-  display: none;
-  max-width: 280px;
-  z-index: 50;
-  box-shadow: 0 6px 20px rgba(0,0,0,.55);
-}
-.tt-title { font-weight: 700; color: #d0dcff; margin-bottom: 5px; font-size: 12px; }
-.tt-row   { color: #607090; }
-.tt-row b { color: #9aaac8; font-weight: 400; }
-.tt-doi a { color: #5a90e0; text-decoration: none; }
-.tt-doi a:hover { text-decoration: underline; }
+  /* ── Graph canvas ── */
+  #graph-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+  svg#graph {
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+  }
 
-/* ── Stats ───────────────────────────────────────────── */
-#stats {
-  position: absolute;
-  bottom: 10px;
-  right: 12px;
-  font-size: 10px;
-  color: #303858;
-  pointer-events: none;
-}
+  /* ── Tooltip ── */
+  #tooltip {
+    position: absolute;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    max-width: 300px;
+    pointer-events: none;
+    display: none;
+    z-index: 100;
+    line-height: 1.5;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+  #tooltip h3 { font-size: 12px; color: var(--accent); margin-bottom: 4px; }
+  #tooltip .tt-meta { font-size: 11px; color: var(--text-dim); }
+  #tooltip .tt-terms { font-size: 10px; color: var(--teal); margin-top: 4px; }
+  #tooltip a { color: var(--accent2); font-size: 11px; }
+
+  /* ── No-data message ── */
+  #no-data {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: var(--text-dim);
+  }
+  #no-data h2 { font-size: 18px; margin-bottom: 8px; color: var(--text); }
+  #no-data p  { font-size: 13px; margin-bottom: 12px; }
+  #file-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  #file-btn:hover { opacity: 0.85; }
+  #file-input { display: none; }
+  #load-error { color: var(--red); font-size: 11px; margin-top: 8px; }
 </style>
 </head>
 <body>
 
-<!-- ── Header ──────────────────────────────────────── -->
-<div id="header">
-  <span id="app-title">NWO Fashion &amp; Textile</span>
-  <input id="search" type="text" placeholder="🔍  Search project title…" autocomplete="off">
-  <span id="status-pill"></span>
-  <button id="load-btn">📂 Load JSON</button>
-  <input id="file-input" type="file" accept=".json" style="display:none">
-</div>
+<header>
+  <div>
+    <h1>NWO SIA · Textile &amp; Fashion Research Network</h1>
+    <div class="subtitle">Force-directed graph · projects ↔ institutions</div>
+  </div>
+  <div id="stats">Loading…</div>
+</header>
 
-<!-- ── Body ────────────────────────────────────────── -->
-<div id="body">
-
-  <!-- Sidebar -->
-  <div id="sidebar">
-
-    <div id="server-notice">
-      <b>Auto-load</b> — serve locally:<br>
-      <code>python3 -m http.server 8080</code><br>
-      then open <code>localhost:8080</code><br>
-      or use <b>📂 Load JSON</b> above.
+<div class="main-layout">
+  <!-- ── Sidebar ── -->
+  <aside>
+    <div class="search-wrap">
+      <input type="text" id="search" placeholder="Search projects…">
     </div>
+    <div class="sidebar-scroll">
 
-    <div class="sec-head">Keywords</div>
-    <div id="kw-list"></div>
+      <!-- Funding types -->
+      <div class="section-hd">
+        Funding type
+        <button id="btn-all-fund">all</button>
+      </div>
+      <div id="fund-checks"></div>
 
-    <div class="sec-head">Funding Type</div>
-    <div id="ft-list"></div>
+      <hr class="divider">
 
-    <div class="sec-head">Display</div>
-    <label class="tog-row">
-      <input type="checkbox" id="tog-labels" checked>
-      <span class="tog-label">Show labels</span>
-    </label>
-    <label class="tog-row">
-      <input type="checkbox" id="tog-institutions" checked>
-      <span class="tog-label">Show institutions</span>
-    </label>
-    <label class="tog-row">
-      <input type="checkbox" id="tog-tooltip" checked>
-      <span class="tog-label">Hover details</span>
-    </label>
+      <!-- Keywords -->
+      <div class="section-hd">
+        Keywords
+        <button id="btn-all-kw">all</button>
+      </div>
+      <div id="kw-checks"></div>
 
-  </div><!-- /sidebar -->
+      <hr class="divider">
 
-  <!-- Graph -->
+      <!-- Display toggles -->
+      <div class="section-hd">Display</div>
+      <div class="toggle-row">
+        <input type="checkbox" id="show-labels" checked>
+        <label for="show-labels">Project labels</label>
+      </div>
+      <div class="toggle-row">
+        <input type="checkbox" id="show-inst" checked>
+        <label for="show-inst">Institutions</label>
+      </div>
+      <div class="toggle-row">
+        <input type="checkbox" id="show-orphan">
+        <label for="show-orphan">Orphan institutions</label>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Legend -->
+      <div class="section-hd">Legend</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f5a623"></div> NWA</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#e53935"></div> RAAK-Pro</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#9c27b0"></div> RAAK-MKB</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#4caf50"></div> RAAK-Publiek</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#00bcd4"></div> KIEM</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#78909c"></div> Other</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#4a90d9; border: 1px solid #aaa"></div> Institution</div>
+    </div>
+  </aside>
+
+  <!-- ── Graph ── -->
   <div id="graph-wrap">
     <svg id="graph"></svg>
-
-    <div id="tooltip">
-      <div class="tt-title" id="tt-title"></div>
-      <div class="tt-row">Scheme:&nbsp;&nbsp;<b id="tt-scheme"></b></div>
-      <div class="tt-row">Years:&nbsp;&nbsp;&nbsp;<b id="tt-years"></b></div>
-      <div class="tt-row">PI:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b id="tt-pi"></b></div>
-      <div class="tt-row">Inst:&nbsp;&nbsp;&nbsp;&nbsp;<b id="tt-inst"></b></div>
-      <div class="tt-row">Tags:&nbsp;&nbsp;&nbsp;&nbsp;<b id="tt-kw"></b></div>
-      <div class="tt-doi" id="tt-doi"></div>
+    <div id="no-data">
+      <h2>No data loaded</h2>
+      <p>Drag &amp; drop <code>nwo_fashion_textile_filtered.json</code> here,<br>or click the button below.</p>
+      <button id="file-btn">Open JSON file</button>
+      <input type="file" id="file-input" accept=".json">
+      <div id="load-error"></div>
     </div>
-
-    <div id="stats"></div>
+    <div id="tooltip"></div>
   </div>
+</div>
 
-</div><!-- /body -->
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"
-        integrity="sha512-vc58zeoMuqZBOpTkMFRMCnpNkRbhIPFUllQemk4g7f/bD5KU0MN0CQFG2q0LBJXo9ZuOvAhQKbCjVWRLkWBg=="
-        crossorigin="anonymous"></script>
 <script>
-'use strict';
+// ═══════════════════════════════════════════════════════════════
+//  Guard: ensure D3 loaded
+// ═══════════════════════════════════════════════════════════════
+if (typeof d3 === 'undefined') {
+  document.getElementById('no-data').innerHTML =
+    '<h2 style="color:#e53935">D3.js failed to load</h2>' +
+    '<p>Check your internet connection and reload.<br>' +
+    'D3 is loaded from <code>https://d3js.org/d3.v7.min.js</code></p>';
+  throw new Error('D3 not available');
+}
 
-// ── Funding type catalogue (largest → smallest) ──────────────────
-const FT_ORDER = [
-  'NWA', 'RAAK-Pro', 'RAAK-MKB', 'RAAK-Publiek', 'RAAK-Other',
-  'KIEM', 'SIA-Other', 'NWO-VI', 'OTP-STW', 'Other'
-];
-const FT_COLOUR = {
-  'NWA':         '#9b59b6',
-  'RAAK-Pro':    '#1a6fa0',
-  'RAAK-MKB':    '#2196f3',
-  'RAAK-Publiek':'#00897b',
-  'RAAK-Other':  '#26a69a',
-  'KIEM':        '#e67e22',
-  'SIA-Other':   '#43a047',
-  'NWO-VI':      '#e53935',
-  'OTP-STW':     '#607d8b',
-  'Other':       '#455a64',
+// ═══════════════════════════════════════════════════════════════
+//  Constants
+// ═══════════════════════════════════════════════════════════════
+const FUND_ORDER = ['nwa','raak-pro','raak-mkb','raak-publiek','kiem'];
+const FUND_COLOR = {
+  'nwa':         '#f5a623',
+  'raak-pro':    '#e53935',
+  'raak-mkb':    '#9c27b0',
+  'raak-publiek':'#4caf50',
+  'kiem':        '#00bcd4',
+  'other':       '#78909c',
 };
-
-function fundingType(scheme) {
-  const s = (scheme || '').toLowerCase();
-  if (s.includes('nwa'))                                    return 'NWA';
-  if (s.includes('raak-pro')  || s.includes('raak pro'))   return 'RAAK-Pro';
-  if (s.includes('raak-mkb')  || s.includes('raak mkb'))   return 'RAAK-MKB';
-  if (s.includes('raak-pub')  || s.includes('raak pub'))   return 'RAAK-Publiek';
-  if (s.includes('kiem'))                                   return 'KIEM';
-  if (s.includes('raak'))                                   return 'RAAK-Other';
-  if (s.includes('sia'))                                    return 'SIA-Other';
-  if (s.includes('vidi') || s.includes('veni') || s.includes('vici')) return 'NWO-VI';
-  if (s.includes('otp')  || s.includes('stw'))              return 'OTP-STW';
-  return 'Other';
+function fundKey(scheme) {
+  if (!scheme) return 'other';
+  const s = scheme.toLowerCase();
+  for (const k of FUND_ORDER) if (s.includes(k)) return k;
+  return 'other';
 }
+function fundColor(scheme) { return FUND_COLOR[fundKey(scheme)] || FUND_COLOR.other; }
 
-// ── State ─────────────────────────────────────────────────────────
-let allProjects    = [];
-let activeKW       = new Set();
-let activeFT       = new Set();
-let searchText     = '';
-let showLabels     = true;
-let showInst       = true;
+// ═══════════════════════════════════════════════════════════════
+//  State
+// ═══════════════════════════════════════════════════════════════
+let allProjects  = [];
+let simulation   = null;
+let activeKw     = new Set();
+let activeFund   = new Set();
+let searchQ      = '';
+let showLabels   = true;
+let showInst     = true;
+let showOrphan   = false;
 
-// ── Parse one raw project record ──────────────────────────────────
-function parseOne(raw) {
-  // Handle [project, hits] tuple format from earlier script version
-  if (Array.isArray(raw) && raw.length === 2 && Array.isArray(raw[1])) raw = raw[0];
+// ═══════════════════════════════════════════════════════════════
+//  SVG / zoom setup
+// ═══════════════════════════════════════════════════════════════
+const svg = d3.select('#graph');
+const zoomG = svg.append('g').attr('class','zoom-root');
+const linkG = zoomG.append('g').attr('class','links');
+const nodeG = zoomG.append('g').attr('class','nodes');
+const labelG = zoomG.append('g').attr('class','labels');
 
-  const id    = String(raw.project_id || raw.projectId || raw.id || Math.random());
-  const title = (raw.title || 'Untitled').trim();
-  const scheme = raw.funding_scheme || raw.fundingScheme || '';
-  const ft    = fundingType(scheme);
-  const sy    = (raw.start_date || raw.startDate || '').slice(0, 4);
-  const ey    = (raw.end_date   || raw.endDate   || '').slice(0, 4);
-  const kws   = raw._matched_terms || [];
-  const piN   = (raw._pi_name         || '').trim();
-  const piI   = (raw._pi_institution  || '').trim();
-  const doi   = (raw.doi || raw.DOI   || '').trim();
-  const url   = `https://www.nwo.nl/projecten/${id}`;
+const zoom = d3.zoom()
+  .scaleExtent([0.1, 8])
+  .on('zoom', e => zoomG.attr('transform', e.transform));
+svg.call(zoom);
 
-  // Collect all partner institutions from project_members
-  const insts = new Set();
-  if (piI) insts.add(piI);
-  for (const m of (raw.project_members || raw.projectMembers || [])) {
-    const org = ((m.organisation || m.organization || '').split('||')[0]).trim();
-    if (org) insts.add(org);
-  }
+// double-click to reset
+svg.on('dblclick.zoom', () => {
+  svg.transition().duration(600).call(zoom.transform, d3.zoomIdentity);
+});
 
-  return { id, title, scheme, ft, sy, ey, kws, piN, piI, doi, url,
-           insts: [...insts], type: 'project' };
+// ═══════════════════════════════════════════════════════════════
+//  Tooltip
+// ═══════════════════════════════════════════════════════════════
+const tooltip = document.getElementById('tooltip');
+function showTip(evt, html) {
+  tooltip.innerHTML = html;
+  tooltip.style.display = 'block';
+  moveTip(evt);
 }
+function moveTip(evt) {
+  const wrap = document.getElementById('graph-wrap');
+  const r = wrap.getBoundingClientRect();
+  let x = evt.clientX - r.left + 14;
+  let y = evt.clientY - r.top  + 14;
+  if (x + 310 > r.width)  x = evt.clientX - r.left - 320;
+  if (y + 200 > r.height) y = evt.clientY - r.top  - 210;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top  = y + 'px';
+}
+function hideTip() { tooltip.style.display = 'none'; }
 
-// ── Build graph nodes + links from filtered project list ──────────
-function buildGraph(projects) {
-  const nodes = [];
-  const links = [];
-  const instMap = new Map();
-
-  for (const p of projects) {
-    nodes.push(Object.assign({ x: undefined, y: undefined, vx: 0, vy: 0 }, p));
-
-    if (!showInst) continue;
-    for (const inst of p.insts) {
-      const iid = 'i_' + inst.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 45);
-      if (!instMap.has(iid)) {
-        instMap.set(iid, { id: iid, label: inst, type: 'inst', n: 0,
-                           x: undefined, y: undefined, vx: 0, vy: 0 });
-      }
-      instMap.get(iid).n++;
-      links.push({ source: p.id, target: iid });
+// ═══════════════════════════════════════════════════════════════
+//  Parse JSON (handles raw array or tuple format)
+// ═══════════════════════════════════════════════════════════════
+function parseProjects(raw) {
+  if (!Array.isArray(raw)) throw new Error('Expected a JSON array');
+  return raw.map(item => {
+    // tuple format: [project, [matched_terms]]
+    if (Array.isArray(item) && item.length === 2 && typeof item[0] === 'object' && !Array.isArray(item[0])) {
+      const [proj, hits] = item;
+      if (!proj._matched_terms && Array.isArray(hits)) proj._matched_terms = hits;
+      return proj;
     }
-  }
-  for (const v of instMap.values()) nodes.push(v);
-  return { nodes, links };
+    return item;
+  });
 }
 
-// ── Active filter ─────────────────────────────────────────────────
-function filtered() {
+// ═══════════════════════════════════════════════════════════════
+//  Build sidebar filters after data loaded
+// ═══════════════════════════════════════════════════════════════
+function buildFilters(projects) {
+  // ── Funding types ──
+  const fundCount = {};
+  projects.forEach(p => {
+    const k = fundKey(p.funding_scheme);
+    fundCount[k] = (fundCount[k] || 0) + 1;
+  });
+  const fundOrder = [...FUND_ORDER, 'other'].filter(k => fundCount[k]);
+  activeFund = new Set(fundOrder);
+
+  const fundDiv = document.getElementById('fund-checks');
+  fundDiv.innerHTML = '';
+  fundOrder.forEach(k => {
+    const row = document.createElement('div');
+    row.className = 'check-row';
+    const id = 'f_' + k;
+    row.innerHTML = `
+      <input type="checkbox" id="${id}" checked data-fund="${k}">
+      <label for="${id}" style="color:${FUND_COLOR[k]}">${k.toUpperCase()}</label>
+      <span class="badge">${fundCount[k]}</span>`;
+    row.querySelector('input').addEventListener('change', e => {
+      if (e.target.checked) activeFund.add(k); else activeFund.delete(k);
+      render();
+    });
+    fundDiv.appendChild(row);
+  });
+
+  // ── Keywords ──
+  const kwCount = {};
+  projects.forEach(p => {
+    (p._matched_terms || []).forEach(t => {
+      const term = t.toLowerCase().trim();
+      kwCount[term] = (kwCount[term] || 0) + 1;
+    });
+  });
+  const kwSorted = Object.entries(kwCount).sort((a,b) => b[1]-a[1]).map(([t]) => t);
+  activeKw = new Set(kwSorted);
+
+  const kwDiv = document.getElementById('kw-checks');
+  kwDiv.innerHTML = '';
+  kwSorted.forEach(term => {
+    const row = document.createElement('div');
+    row.className = 'check-row';
+    const id = 'k_' + term.replace(/\W/g,'_');
+    row.innerHTML = `
+      <input type="checkbox" id="${id}" checked data-kw="${term}">
+      <label for="${id}">${term}</label>
+      <span class="badge">${kwCount[term]}</span>`;
+    row.querySelector('input').addEventListener('change', e => {
+      if (e.target.checked) activeKw.add(term); else activeKw.delete(term);
+      render();
+    });
+    kwDiv.appendChild(row);
+  });
+}
+
+// ── All-on buttons ──
+document.getElementById('btn-all-fund').addEventListener('click', () => {
+  document.querySelectorAll('[data-fund]').forEach(cb => { cb.checked = true; activeFund.add(cb.dataset.fund); });
+  render();
+});
+document.getElementById('btn-all-kw').addEventListener('click', () => {
+  document.querySelectorAll('[data-kw]').forEach(cb => { cb.checked = true; activeKw.add(cb.dataset.kw); });
+  render();
+});
+
+// ── Display toggles ──
+document.getElementById('show-labels').addEventListener('change', e => { showLabels = e.target.checked; render(); });
+document.getElementById('show-inst').addEventListener('change', e => { showInst = e.target.checked; render(); });
+document.getElementById('show-orphan').addEventListener('change', e => { showOrphan = e.target.checked; render(); });
+
+// ── Search ──
+document.getElementById('search').addEventListener('input', e => { searchQ = e.target.value.trim().toLowerCase(); render(); });
+
+// ═══════════════════════════════════════════════════════════════
+//  Filter projects
+// ═══════════════════════════════════════════════════════════════
+function filterProjects() {
   return allProjects.filter(p => {
-    if (activeKW.size && !p.kws.some(k => activeKW.has(k))) return false;
-    if (activeFT.size && !activeFT.has(p.ft))                return false;
-    if (searchText && !p.title.toLowerCase().includes(searchText)) return false;
+    // funding filter
+    if (!activeFund.has(fundKey(p.funding_scheme))) return false;
+
+    // keyword filter: project must have at least one active keyword
+    const terms = (p._matched_terms || []).map(t => t.toLowerCase().trim());
+    // if no matched_terms at all, include always (scheme-only match)
+    if (terms.length > 0 && !terms.some(t => activeKw.has(t))) return false;
+
+    // search filter
+    if (searchQ) {
+      const hay = [
+        p.title_en, p.title_nl, p.summary_en, p.summary_nl,
+        p._pi_name, p._pi_institution, p.project_id, p.funding_scheme
+      ].filter(Boolean).join(' ').toLowerCase();
+      if (!hay.includes(searchQ)) return false;
+    }
+
     return true;
   });
 }
 
-// ── D3 wiring ─────────────────────────────────────────────────────
-let svg, root, sim;
-let linkSel, nodeSel, labelSel;
+// ═══════════════════════════════════════════════════════════════
+//  Build graph data
+// ═══════════════════════════════════════════════════════════════
+function buildGraph(projects) {
+  const nodes = [];
+  const links = [];
+  const instMap = new Map(); // name → node
 
-function initSVG() {
-  const wrap = document.getElementById('graph-wrap');
-  svg = d3.select('#graph')
-    .attr('width',  wrap.clientWidth)
-    .attr('height', wrap.clientHeight);
+  projects.forEach(p => {
+    const pid   = p.project_id || p.id || Math.random().toString(36).slice(2);
+    const title = p.title_en || p.title_nl || p.title || pid;
+    const pNode = {
+      id:     pid,
+      type:   'project',
+      label:  title.length > 45 ? title.slice(0,42)+'…' : title,
+      fullTitle: title,
+      scheme: p.funding_scheme || '',
+      start:  (p.start_date||'').slice(0,4),
+      end:    (p.end_date||'').slice(0,4),
+      pi:     p._pi_name || '',
+      piInst: p._pi_institution || '',
+      terms:  p._matched_terms || [],
+      url:    p.project_page_url || p.url || '',
+      r:      6,
+    };
+    nodes.push(pNode);
 
-  const zoom = d3.zoom().scaleExtent([0.05, 6])
-    .on('zoom', e => root.attr('transform', e.transform));
-  svg.call(zoom);
+    // extract institutions from project_members
+    const members = p.project_members || [];
+    const orgsForProject = new Set();
 
-  root = svg.append('g');
-  root.append('g').attr('class', 'lyr-links');
-  root.append('g').attr('class', 'lyr-nodes');
-  root.append('g').attr('class', 'lyr-labels');
+    members.forEach(m => {
+      const orgStr = m.organisation || m.organization || '';
+      const orgParts = orgStr.split('||').map(s => s.trim()).filter(Boolean);
+      orgParts.forEach(org => {
+        if (!org || org.length < 2) return;
+        if (!orgsForProject.has(org)) {
+          orgsForProject.add(org);
+          if (!instMap.has(org)) {
+            const iNode = {
+              id:    'inst_' + org,
+              type:  'institution',
+              label: org.length > 35 ? org.slice(0,32)+'…' : org,
+              fullLabel: org,
+              r:     4,
+              count: 0,
+            };
+            instMap.set(org, iNode);
+            nodes.push(iNode);
+          }
+          instMap.get(org).count++;
+          links.push({ source: pid, target: 'inst_' + org });
+        }
+      });
+    });
+  });
+
+  // adjust institution radius by connectivity
+  instMap.forEach(n => { n.r = Math.min(3 + n.count * 0.8, 10); });
+
+  return { nodes, links };
 }
 
+// ═══════════════════════════════════════════════════════════════
+//  Render
+// ═══════════════════════════════════════════════════════════════
 function render() {
-  const projs = filtered();
-  const { nodes, links } = buildGraph(projs);
+  const projects = filterProjects();
+  const { nodes: rawNodes, links: rawLinks } = buildGraph(projects);
 
-  const nProj = nodes.filter(n => n.type === 'project').length;
-  const nInst = nodes.filter(n => n.type === 'inst').length;
+  // optionally hide institutions
+  let nodes, links;
+  if (!showInst) {
+    nodes = rawNodes.filter(n => n.type === 'project');
+    links = [];
+  } else {
+    // optionally hide orphan institutions (only 1 connection)
+    const instConnected = new Set(rawLinks.map(l => l.target));
+    const instDegree = {};
+    rawLinks.forEach(l => { instDegree[l.target] = (instDegree[l.target]||0)+1; });
+
+    nodes = rawNodes.filter(n => {
+      if (n.type === 'project') return true;
+      if (!showOrphan && instDegree['inst_' + n.fullLabel] <= 1 && instDegree[n.id] <= 1) {
+        // check by id
+        const deg = rawLinks.filter(l => l.target === n.id || l.source === n.id).length;
+        return deg > 1;
+      }
+      return true;
+    });
+    const nodeIds = new Set(nodes.map(n => n.id));
+    links = rawLinks.filter(l => nodeIds.has(l.source) && nodeIds.has(l.target));
+  }
+
+  // stats
+  const nProj = nodes.filter(n => n.type==='project').length;
+  const nInst = nodes.filter(n => n.type==='institution').length;
   document.getElementById('stats').textContent =
     `${nProj} projects · ${nInst} institutions · ${links.length} links`;
 
-  const W = +svg.attr('width'), H = +svg.attr('height');
-  if (sim) sim.stop();
+  // hide/show no-data panel
+  document.getElementById('no-data').style.display = allProjects.length === 0 ? 'block' : 'none';
 
-  sim = d3.forceSimulation(nodes)
-    .force('link',    d3.forceLink(links).id(d => d.id)
-                        .distance(d => d.source.type === 'inst' || d.target.type === 'inst' ? 55 : 40)
-                        .strength(0.9))
-    .force('charge',  d3.forceManyBody()
-                        .strength(d => d.type === 'inst' ? -140 : -55))
-    .force('center',  d3.forceCenter(W / 2, H / 2).strength(0.04))
-    .force('collide', d3.forceCollide().radius(d => d.type === 'inst' ? 15 : 8).strength(0.7))
-    .force('x',       d3.forceX(W / 2).strength(0.03))
-    .force('y',       d3.forceY(H / 2).strength(0.03))
-    .alphaDecay(0.025);
+  // stop old simulation
+  if (simulation) simulation.stop();
+
+  // clear
+  linkG.selectAll('*').remove();
+  nodeG.selectAll('*').remove();
+  labelG.selectAll('*').remove();
+
+  if (nodes.length === 0) return;
+
+  // initialise positions around centre
+  const W = svg.node().clientWidth  || 900;
+  const H = svg.node().clientHeight || 600;
+  nodes.forEach(n => {
+    if (n.x === undefined) {
+      n.x = W/2 + (Math.random()-0.5)*120;
+      n.y = H/2 + (Math.random()-0.5)*120;
+    }
+  });
 
   // ── Links ──
-  linkSel = root.select('.lyr-links')
-    .selectAll('line')
-    .data(links, d => (d.source.id||d.source)+'-'+(d.target.id||d.target))
-    .join(
-      enter  => enter.append('line').attr('stroke', '#1e2438').attr('stroke-width', 1),
-      update => update,
-      exit   => exit.remove()
-    );
+  const link = linkG.selectAll('line')
+    .data(links)
+    .join('line')
+    .attr('stroke', '#2a2a5a')
+    .attr('stroke-width', 0.8)
+    .attr('stroke-opacity', 0.6);
 
   // ── Nodes ──
-  nodeSel = root.select('.lyr-nodes')
-    .selectAll('circle')
+  const node = nodeG.selectAll('circle')
     .data(nodes, d => d.id)
-    .join(
-      enter => enter.append('circle')
-        .attr('r', d => d.type === 'inst' ? 9 : 5.5)
-        .attr('stroke', '#0f1117').attr('stroke-width', 1.2)
-        .style('cursor', 'pointer')
-        .call(d3.drag()
-          .on('start', (e, d) => { if (!e.active) sim.alphaTarget(.3).restart(); d.fx=d.x; d.fy=d.y; })
-          .on('drag',  (e, d) => { d.fx=e.x; d.fy=e.y; })
-          .on('end',   (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx=null; d.fy=null; }))
-        .on('mouseover', showTip)
-        .on('mousemove', moveTip)
-        .on('mouseout',  hideTip),
-      update => update,
-      exit   => exit.remove()
-    )
-    .attr('fill', d => d.type === 'inst' ? '#0d6e5d' : (FT_COLOUR[d.ft] || '#455a64'));
-
-  // ── Labels ──
-  labelSel = root.select('.lyr-labels')
-    .selectAll('text')
-    .data(nodes, d => d.id)
-    .join(
-      enter => enter.append('text')
-        .attr('text-anchor', 'middle')
-        .attr('pointer-events', 'none'),
-      update => update,
-      exit   => exit.remove()
-    )
-    .attr('font-size', d => d.type === 'inst' ? 9.5 : 8.5)
-    .attr('fill',      d => d.type === 'inst' ? '#5dc8b0' : '#8898c0')
-    .attr('dy',        d => d.type === 'inst' ? -13 : -9)
-    .text(d => {
-      const s = d.type === 'inst' ? d.label : d.title;
-      return s.length > 30 ? s.slice(0, 28) + '…' : s;
+    .join('circle')
+    .attr('r', d => d.r)
+    .attr('fill', d => d.type === 'project' ? fundColor(d.scheme) : '#4a90d9')
+    .attr('fill-opacity', d => d.type === 'project' ? 0.9 : 0.65)
+    .attr('stroke', d => d.type === 'project' ? '#fff' : '#aaa')
+    .attr('stroke-width', d => d.type === 'project' ? 0.8 : 0.4)
+    .style('cursor', 'pointer')
+    .call(d3.drag()
+      .on('start', dragStart)
+      .on('drag',  dragged)
+      .on('end',   dragEnd))
+    .on('mouseover', (evt, d) => {
+      let html;
+      if (d.type === 'project') {
+        html = `<h3>${escHtml(d.fullTitle)}</h3>
+          <div class="tt-meta">
+            <b>Scheme:</b> ${escHtml(d.scheme)}<br>
+            <b>Period:</b> ${d.start||'?'} – ${d.end||'?'}<br>
+            ${d.pi ? `<b>PI:</b> ${escHtml(d.pi)}<br>` : ''}
+            ${d.piInst ? `<b>Institution:</b> ${escHtml(d.piInst)}<br>` : ''}
+          </div>
+          ${d.terms.length ? `<div class="tt-terms">🏷 ${d.terms.join(' · ')}</div>` : ''}
+          ${d.url ? `<div style="margin-top:5px"><a href="${escHtml(d.url)}" target="_blank">Project page ↗</a></div>` : ''}`;
+      } else {
+        html = `<h3 style="color:#4a90d9">${escHtml(d.fullLabel)}</h3>
+          <div class="tt-meta">Research institution</div>`;
+      }
+      showTip(evt, html);
+      // highlight connected
+      link.attr('stroke-opacity', l =>
+        (l.source.id===d.id||l.target.id===d.id) ? 1 : 0.1)
+         .attr('stroke', l =>
+        (l.source.id===d.id||l.target.id===d.id) ? '#f5a623' : '#2a2a5a');
+      node.attr('fill-opacity', n =>
+        n.id===d.id ? 1 :
+        links.some(l=>(l.source.id===d.id&&l.target.id===n.id)||(l.target.id===d.id&&l.source.id===n.id)) ? 0.95 : 0.2);
     })
-    .style('display', showLabels ? null : 'none');
+    .on('mousemove', moveTip)
+    .on('mouseout', () => {
+      hideTip();
+      link.attr('stroke-opacity', 0.6).attr('stroke', '#2a2a5a');
+      node.attr('fill-opacity', d => d.type==='project' ? 0.9 : 0.65);
+    })
+    .on('click', (evt, d) => {
+      if (d.url) window.open(d.url, '_blank');
+    });
 
-  sim.on('tick', () => {
-    linkSel
+  // ── Labels (projects only) ──
+  const label = labelG.selectAll('text')
+    .data(showLabels ? nodes.filter(n=>n.type==='project') : [], d => d.id)
+    .join('text')
+    .text(d => d.label)
+    .attr('font-size', '7px')
+    .attr('fill', '#ccccee')
+    .attr('pointer-events', 'none')
+    .attr('dy', d => -d.r - 2);
+
+  // ── Simulation ──
+  simulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d=>d.id).distance(d =>
+      d.source.type==='project' ? 45 : 38).strength(0.4))
+    .force('charge', d3.forceManyBody().strength(d =>
+      d.type==='project' ? -55 : -25))
+    .force('collide', d3.forceCollide(d => d.type==='project' ? 9 : 5))
+    .force('center', d3.forceCenter(W/2, H/2).strength(0.04))
+    .alphaDecay(0.025)
+    .on('tick', ticked);
+
+  function ticked() {
+    link
       .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
       .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
-    nodeSel .attr('cx', d => d.x).attr('cy', d => d.y);
-    labelSel.attr('x',  d => d.x).attr('y',  d => d.y);
-  });
-}
-
-// ── Tooltip ───────────────────────────────────────────────────────
-const $tt = document.getElementById('tooltip');
-
-function showTip(event, d) {
-  if (!document.getElementById('tog-tooltip').checked) return;
-  if (d.type === 'inst') {
-    document.getElementById('tt-title').textContent  = d.label;
-    document.getElementById('tt-scheme').textContent = '';
-    document.getElementById('tt-years').textContent  = `${d.n} project(s)`;
-    document.getElementById('tt-pi').textContent     = '';
-    document.getElementById('tt-inst').textContent   = '';
-    document.getElementById('tt-kw').textContent     = '';
-    document.getElementById('tt-doi').innerHTML      = '';
-  } else {
-    document.getElementById('tt-title').textContent  = d.title;
-    document.getElementById('tt-scheme').textContent = d.scheme;
-    document.getElementById('tt-years').textContent  = d.sy && d.ey ? `${d.sy} – ${d.ey}` : d.sy || '—';
-    document.getElementById('tt-pi').textContent     = d.piN || '—';
-    document.getElementById('tt-inst').textContent   = d.piI || '—';
-    document.getElementById('tt-kw').textContent     = d.kws.join(', ') || '—';
-    const doiEl = document.getElementById('tt-doi');
-    if (d.doi) {
-      const href = d.doi.startsWith('http') ? d.doi : `https://doi.org/${d.doi}`;
-      doiEl.innerHTML = `DOI: <a href="${href}" target="_blank">${d.doi.replace('https://doi.org/','')}</a>`;
-    } else {
-      doiEl.innerHTML = `<a href="${d.url}" target="_blank">NWO project page ↗</a>`;
-    }
-  }
-  $tt.style.display = 'block';
-}
-
-function moveTip(event) {
-  const r = document.getElementById('graph-wrap').getBoundingClientRect();
-  let x = event.clientX - r.left + 14, y = event.clientY - r.top - 10;
-  if (x + 295 > r.width)  x -= 310;
-  if (y + 180 > r.height) y -= 190;
-  $tt.style.left = x + 'px';
-  $tt.style.top  = y + 'px';
-}
-function hideTip() { $tt.style.display = 'none'; }
-
-// ── Build sidebar ─────────────────────────────────────────────────
-function buildSidebar() {
-  // keyword counts from all loaded projects
-  const kwC = {}, ftC = {};
-  for (const p of allProjects) {
-    for (const k of p.kws)  kwC[k]   = (kwC[k]   || 0) + 1;
-    ftC[p.ft] = (ftC[p.ft] || 0) + 1;
+    node
+      .attr('cx', d => d.x).attr('cy', d => d.y);
+    label
+      .attr('x', d => d.x).attr('y', d => d.y);
   }
 
-  // Keywords — sorted by count descending
-  activeKW.clear();
-  const kwDiv = document.getElementById('kw-list');
-  kwDiv.innerHTML = '';
-  Object.entries(kwC).sort((a, b) => b[1] - a[1]).forEach(([kw, cnt]) => {
-    activeKW.add(kw);
-    kwDiv.appendChild(makeRow(kw, kw, cnt, '#4a6ad0', () => {
-      activeKW.has(kw) ? activeKW.delete(kw) : activeKW.add(kw);
-      render();
-    }, true));
-  });
-
-  // Funding types — in canonical order
-  activeFT.clear();
-  const ftDiv = document.getElementById('ft-list');
-  ftDiv.innerHTML = '';
-  for (const ft of FT_ORDER) {
-    if (!ftC[ft]) continue;
-    activeFT.add(ft);
-    ftDiv.appendChild(makeRow(ft, ft, ftC[ft], FT_COLOUR[ft] || '#455a64', () => {
-      activeFT.has(ft) ? activeFT.delete(ft) : activeFT.add(ft);
-      render();
-    }, true));
+  function dragStart(evt, d) {
+    if (!evt.active) simulation.alphaTarget(0.3).restart();
+    d.fx = d.x; d.fy = d.y;
+  }
+  function dragged(evt, d) { d.fx = evt.x; d.fy = evt.y; }
+  function dragEnd(evt, d) {
+    if (!evt.active) simulation.alphaTarget(0);
+    d.fx = null; d.fy = null;
   }
 }
 
-function makeRow(id, label, count, colour, onChange, checked) {
-  const el = document.createElement('label');
-  el.className = 'f-row';
-
-  const cb  = document.createElement('input');
-  cb.type = 'checkbox'; cb.checked = checked;
-  cb.addEventListener('change', onChange);
-
-  const dot = document.createElement('span');
-  dot.className = 'f-dot';
-  dot.style.background = colour;
-
-  const lbl = document.createElement('span');
-  lbl.className = 'f-label'; lbl.textContent = label;
-
-  const cnt = document.createElement('span');
-  cnt.className = 'f-count'; cnt.textContent = count;
-
-  el.append(cb, dot, lbl, cnt);
-  return el;
-}
-
-// ── Data loading ──────────────────────────────────────────────────
-function ingest(rawArray) {
-  // Unwrap tuple format: [[project, hits], ...]
-  if (rawArray.length && Array.isArray(rawArray[0]) && Array.isArray(rawArray[0][1])) {
-    rawArray = rawArray.map(x => x[0]);
-  }
-  allProjects = rawArray.map(parseOne).filter(p => p.id);
-  buildSidebar();
-  render();
-  document.getElementById('status-pill').textContent = `${allProjects.length} projects`;
-  document.getElementById('server-notice').classList.add('hidden');
-}
-
-// Auto-fetch when served via HTTP
-async function autoLoad() {
-  const candidates = [
-    'nwo_fashion_textile_filtered.json',
-    'nwo_textile_raw.json',
-  ];
-  for (const fname of candidates) {
-    try {
-      const r = await fetch(fname);
-      if (!r.ok) continue;
-      const data = await r.json();
-      if (Array.isArray(data) && data.length) {
-        document.getElementById('status-pill').textContent = `Auto-loaded: ${fname}`;
-        ingest(data);
-        return;
-      }
-    } catch (_) { /* fetch blocked on file:// — normal */ }
+// ═══════════════════════════════════════════════════════════════
+//  Load data
+// ═══════════════════════════════════════════════════════════════
+function ingest(raw) {
+  try {
+    allProjects = parseProjects(raw);
+    buildFilters(allProjects);
+    render();
+    document.getElementById('no-data').style.display = 'none';
+  } catch(e) {
+    showError('Parse error: ' + e.message);
   }
 }
 
-// Manual load
-document.getElementById('load-btn').addEventListener('click', () =>
+function showError(msg) {
+  document.getElementById('load-error').textContent = msg;
+  document.getElementById('no-data').style.display = 'block';
+}
+
+// ── File picker ──
+document.getElementById('file-btn').addEventListener('click', () =>
   document.getElementById('file-input').click());
 
-document.getElementById('file-input').addEventListener('change', e => {
-  const f = e.target.files[0]; if (!f) return;
-  const r = new FileReader();
-  r.onload = ev => {
-    try { ingest(JSON.parse(ev.target.result)); }
-    catch(err) { alert('JSON parse error: ' + err.message); }
+document.getElementById('file-input').addEventListener('change', evt => {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try { ingest(JSON.parse(e.target.result)); }
+    catch(err) { showError('Cannot parse JSON: ' + err.message); }
   };
-  r.readAsText(f);
-  e.target.value = '';
+  reader.readAsText(file);
 });
 
-// Search
-document.getElementById('search').addEventListener('input', e => {
-  searchText = e.target.value.toLowerCase().trim();
-  render();
+// ── Drag & drop onto graph area ──
+const graphWrap = document.getElementById('graph-wrap');
+graphWrap.addEventListener('dragover', e => e.preventDefault());
+graphWrap.addEventListener('drop', e => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try { ingest(JSON.parse(ev.target.result)); }
+    catch(err) { showError('Cannot parse dropped file: ' + err.message); }
+  };
+  reader.readAsText(file);
 });
 
-// Display toggles
-document.getElementById('tog-labels').addEventListener('change', e => {
-  showLabels = e.target.checked;
-  if (labelSel) labelSel.style('display', showLabels ? null : 'none');
-});
-document.getElementById('tog-institutions').addEventListener('change', e => {
-  showInst = e.target.checked;
-  render();
-});
+// ── Auto-load via fetch (works when served over HTTP/S) ──
+(async function autoLoad() {
+  const candidates = [
+    'nwo_fashion_textile_filtered.json',
+    './nwo_fashion_textile_filtered.json',
+  ];
+  for (const url of candidates) {
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) continue;
+      const data = await resp.json();
+      ingest(data);
+      return;
+    } catch (_) { /* try next */ }
+  }
+  // Not found over HTTP — show manual picker (already visible)
+})();
 
-// Resize
-const resizeObs = new ResizeObserver(() => {
-  const w = document.getElementById('graph-wrap');
-  svg.attr('width', w.clientWidth).attr('height', w.clientHeight);
-});
-resizeObs.observe(document.getElementById('graph-wrap'));
-
-// Boot
-initSVG();
-autoLoad();
+// ═══════════════════════════════════════════════════════════════
+//  Utilities
+// ═══════════════════════════════════════════════════════════════
+function escHtml(s) {
+  return String(s||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 </script>
 </body>
 </html>
