@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NWO SIA Textile &amp; Fashion Research Network</title>
+<title>NWO Textile &amp; Fashion — Full Raw Network</title>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <style>
   :root {
@@ -149,6 +149,31 @@
     flex-shrink: 0;
   }
 
+  /* Keyword pill toggles */
+  .kw-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px;
+  }
+  .kw-pill {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--panel2);
+    color: var(--text-dim);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s, color 0.15s;
+  }
+  .kw-pill.active {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+
   /* Divider */
   .divider { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
 
@@ -188,6 +213,28 @@
     background: var(--bg);
   }
 
+  /* ── Loading overlay ── */
+  #loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    z-index: 200;
+  }
+  #loading .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading p { font-size: 12px; color: var(--text-dim); }
+
   /* ── Tooltip ── */
   #tooltip {
     position: absolute;
@@ -206,39 +253,14 @@
   #tooltip .tt-meta { font-size: 11px; color: var(--text-dim); }
   #tooltip .tt-terms { font-size: 10px; color: var(--teal); margin-top: 4px; }
   #tooltip a { color: var(--accent2); font-size: 11px; }
-
-  /* ── No-data message ── */
-  #no-data {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    color: var(--text-dim);
-  }
-  #no-data h2 { font-size: 18px; margin-bottom: 8px; color: var(--text); }
-  #no-data p  { font-size: 13px; margin-bottom: 12px; }
-  #file-btn {
-    background: var(--accent);
-    color: #000;
-    border: none;
-    border-radius: 5px;
-    padding: 8px 18px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  #file-btn:hover { opacity: 0.85; }
-  #file-input { display: none; }
-  #load-error { color: var(--red); font-size: 11px; margin-top: 8px; }
 </style>
 </head>
 <body>
 
 <header>
   <div>
-    <h1>NWO SIA · Textile &amp; Fashion Research Network</h1>
-    <div class="subtitle">Force-directed graph · projects ↔ institutions</div>
+    <h1>NWO · Textile &amp; Fashion Research Network — Full Raw Dataset</h1>
+    <div class="subtitle">Force-directed graph · keyword-filtered · projects ↔ institutions</div>
   </div>
   <div id="stats">Loading…</div>
 </header>
@@ -251,21 +273,18 @@
     </div>
     <div class="sidebar-scroll">
 
+      <!-- Keyword filter pills -->
+      <div class="section-hd">Keywords (match any)</div>
+      <div class="kw-pills" id="kw-pills"></div>
+
+      <hr class="divider">
+
       <!-- Funding types -->
       <div class="section-hd">
         Funding type
         <button id="btn-all-fund">all</button>
       </div>
       <div id="fund-checks"></div>
-
-      <hr class="divider">
-
-      <!-- Keywords -->
-      <div class="section-hd">
-        Keywords
-        <button id="btn-all-kw">all</button>
-      </div>
-      <div id="kw-checks"></div>
 
       <hr class="divider">
 
@@ -294,19 +313,16 @@
       <div class="legend-item"><div class="legend-dot" style="background:#4caf50"></div> RAAK-Publiek</div>
       <div class="legend-item"><div class="legend-dot" style="background:#00bcd4"></div> KIEM</div>
       <div class="legend-item"><div class="legend-dot" style="background:#78909c"></div> Other</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#4a90d9; border: 1px solid #aaa"></div> Institution</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#4a90d9; border:1px solid #aaa"></div> Institution</div>
     </div>
   </aside>
 
   <!-- ── Graph ── -->
   <div id="graph-wrap">
     <svg id="graph"></svg>
-    <div id="no-data">
-      <h2>No data loaded</h2>
-      <p>Drag &amp; drop <code>nwo_fashion_textile_filtered.json</code> here,<br>or click the button below.</p>
-      <button id="file-btn">Open JSON file</button>
-      <input type="file" id="file-input" accept=".json">
-      <div id="load-error"></div>
+    <div id="loading">
+      <div class="spinner"></div>
+      <p id="loading-msg">Loading nwo_textile_raw.json…</p>
     </div>
     <div id="tooltip"></div>
   </div>
@@ -317,29 +333,39 @@
 //  Guard: ensure D3 loaded
 // ═══════════════════════════════════════════════════════════════
 if (typeof d3 === 'undefined') {
-  document.getElementById('no-data').innerHTML =
+  document.getElementById('loading').innerHTML =
     '<h2 style="color:#e53935">D3.js failed to load</h2>' +
-    '<p>Check your internet connection and reload.<br>' +
-    'D3 is loaded from <code>https://d3js.org/d3.v7.min.js</code></p>';
+    '<p>Check your internet connection and reload.</p>';
   throw new Error('D3 not available');
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  Constants
+//  Original keyword list used to identify textile/fashion projects
+// ═══════════════════════════════════════════════════════════════
+const ALL_KEYWORDS = ['textile', 'textiel', 'fashion', 'garment'];
+
+// ═══════════════════════════════════════════════════════════════
+//  Funding scheme helpers
 // ═══════════════════════════════════════════════════════════════
 const FUND_ORDER = ['nwa','raak-pro','raak-mkb','raak-publiek','kiem'];
 const FUND_COLOR = {
-  'nwa':         '#f5a623',
-  'raak-pro':    '#e53935',
-  'raak-mkb':    '#9c27b0',
-  'raak-publiek':'#4caf50',
-  'kiem':        '#00bcd4',
-  'other':       '#78909c',
+  'nwa':          '#f5a623',
+  'raak-pro':     '#e53935',
+  'raak-mkb':     '#9c27b0',
+  'raak-publiek': '#4caf50',
+  'kiem':         '#00bcd4',
+  'other':        '#78909c',
 };
 function fundKey(scheme) {
   if (!scheme) return 'other';
   const s = scheme.toLowerCase();
-  for (const k of FUND_ORDER) if (s.includes(k)) return k;
+  for (const k of FUND_ORDER) if (s.includes(k.replace('-',''))) return k;
+  // handle variants: "raak pro" without hyphen
+  if (s.includes('raak') && s.includes('pro'))    return 'raak-pro';
+  if (s.includes('raak') && s.includes('mkb'))    return 'raak-mkb';
+  if (s.includes('raak') && s.includes('publ'))   return 'raak-publiek';
+  if (s.includes('kiem'))                          return 'kiem';
+  if (s.includes('nwa'))                           return 'nwa';
   return 'other';
 }
 function fundColor(scheme) { return FUND_COLOR[fundKey(scheme)] || FUND_COLOR.other; }
@@ -347,33 +373,30 @@ function fundColor(scheme) { return FUND_COLOR[fundKey(scheme)] || FUND_COLOR.ot
 // ═══════════════════════════════════════════════════════════════
 //  State
 // ═══════════════════════════════════════════════════════════════
-let allProjects  = [];
-let simulation   = null;
-let activeKw     = new Set();
+let allProjects  = [];          // parsed + annotated from raw
+let activeKw     = new Set(ALL_KEYWORDS);
 let activeFund   = new Set();
 let searchQ      = '';
 let showLabels   = true;
 let showInst     = true;
 let showOrphan   = false;
+let simulation   = null;
 
 // ═══════════════════════════════════════════════════════════════
 //  SVG / zoom setup
 // ═══════════════════════════════════════════════════════════════
-const svg = d3.select('#graph');
+const svg   = d3.select('#graph');
 const zoomG = svg.append('g').attr('class','zoom-root');
 const linkG = zoomG.append('g').attr('class','links');
 const nodeG = zoomG.append('g').attr('class','nodes');
-const labelG = zoomG.append('g').attr('class','labels');
+const labelG= zoomG.append('g').attr('class','labels');
 
 const zoom = d3.zoom()
-  .scaleExtent([0.1, 8])
+  .scaleExtent([0.05, 10])
   .on('zoom', e => zoomG.attr('transform', e.transform));
 svg.call(zoom);
-
-// double-click to reset
-svg.on('dblclick.zoom', () => {
-  svg.transition().duration(600).call(zoom.transform, d3.zoomIdentity);
-});
+svg.on('dblclick.zoom', () =>
+  svg.transition().duration(600).call(zoom.transform, d3.zoomIdentity));
 
 // ═══════════════════════════════════════════════════════════════
 //  Tooltip
@@ -385,10 +408,8 @@ function showTip(evt, html) {
   moveTip(evt);
 }
 function moveTip(evt) {
-  const wrap = document.getElementById('graph-wrap');
-  const r = wrap.getBoundingClientRect();
-  let x = evt.clientX - r.left + 14;
-  let y = evt.clientY - r.top  + 14;
+  const r = document.getElementById('graph-wrap').getBoundingClientRect();
+  let x = evt.clientX - r.left + 14, y = evt.clientY - r.top + 14;
   if (x + 310 > r.width)  x = evt.clientX - r.left - 320;
   if (y + 200 > r.height) y = evt.clientY - r.top  - 210;
   tooltip.style.left = x + 'px';
@@ -397,37 +418,80 @@ function moveTip(evt) {
 function hideTip() { tooltip.style.display = 'none'; }
 
 // ═══════════════════════════════════════════════════════════════
-//  Parse JSON (handles raw array or tuple format)
+//  Annotate raw projects: extract PI, terms, normalise fields
 // ═══════════════════════════════════════════════════════════════
-function parseProjects(raw) {
-  if (!Array.isArray(raw)) throw new Error('Expected a JSON array');
-  return raw.map(item => {
-    // tuple format: [project, [matched_terms]]
-    if (Array.isArray(item) && item.length === 2 && typeof item[0] === 'object' && !Array.isArray(item[0])) {
-      const [proj, hits] = item;
-      if (!proj._matched_terms && Array.isArray(hits)) proj._matched_terms = hits;
-      return proj;
-    }
-    return item;
+function annotate(raw) {
+  return raw.map(p => {
+    // searchable text
+    const hay = [p.title, p.summary_nl, p.summary_en]
+      .filter(Boolean).join(' ').toLowerCase();
+
+    // matched keywords
+    const terms = ALL_KEYWORDS.filter(k => hay.includes(k));
+
+    // PI: prefer Main Applicant, then Project leader, then first member
+    const members = p.project_members || [];
+    const pi = members.find(m => /main applicant/i.test(m.role || ''))
+            || members.find(m => /project leader/i.test(m.role || ''))
+            || members[0]
+            || null;
+    const piName = pi ? `${pi.first_name || ''} ${pi.last_name || ''}`.trim() : '';
+    const piInst = pi ? (pi.organisation || '').split('||')[0].trim() : '';
+
+    return {
+      ...p,
+      title_en:         p.title || '',
+      _matched_terms:   terms,
+      _pi_name:         piName,
+      _pi_institution:  piInst,
+      project_page_url: p.project_id
+        ? `https://www.nwo.nl/projecten/${p.project_id}` : '',
+    };
   });
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  Build sidebar filters after data loaded
+//  Build keyword pill toggles
 // ═══════════════════════════════════════════════════════════════
-function buildFilters(projects) {
-  // ── Funding types ──
+function buildKwPills() {
+  const container = document.getElementById('kw-pills');
+  container.innerHTML = '';
+  ALL_KEYWORDS.forEach(kw => {
+    const pill = document.createElement('span');
+    pill.className = 'kw-pill active';
+    pill.textContent = kw;
+    pill.dataset.kw = kw;
+    pill.addEventListener('click', () => {
+      if (activeKw.has(kw)) {
+        // keep at least one active
+        if (activeKw.size === 1) return;
+        activeKw.delete(kw);
+        pill.classList.remove('active');
+      } else {
+        activeKw.add(kw);
+        pill.classList.add('active');
+      }
+      render();
+    });
+    container.appendChild(pill);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Build funding-type checkboxes (dynamic from data)
+// ═══════════════════════════════════════════════════════════════
+function buildFundFilters(projects) {
   const fundCount = {};
   projects.forEach(p => {
     const k = fundKey(p.funding_scheme);
     fundCount[k] = (fundCount[k] || 0) + 1;
   });
-  const fundOrder = [...FUND_ORDER, 'other'].filter(k => fundCount[k]);
-  activeFund = new Set(fundOrder);
+  const order = [...FUND_ORDER, 'other'].filter(k => fundCount[k]);
+  activeFund = new Set(order);
 
-  const fundDiv = document.getElementById('fund-checks');
-  fundDiv.innerHTML = '';
-  fundOrder.forEach(k => {
+  const div = document.getElementById('fund-checks');
+  div.innerHTML = '';
+  order.forEach(k => {
     const row = document.createElement('div');
     row.className = 'check-row';
     const id = 'f_' + k;
@@ -439,74 +503,46 @@ function buildFilters(projects) {
       if (e.target.checked) activeFund.add(k); else activeFund.delete(k);
       render();
     });
-    fundDiv.appendChild(row);
-  });
-
-  // ── Keywords ──
-  const kwCount = {};
-  projects.forEach(p => {
-    (p._matched_terms || []).forEach(t => {
-      const term = t.toLowerCase().trim();
-      kwCount[term] = (kwCount[term] || 0) + 1;
-    });
-  });
-  const kwSorted = Object.entries(kwCount).sort((a,b) => b[1]-a[1]).map(([t]) => t);
-  activeKw = new Set(kwSorted);
-
-  const kwDiv = document.getElementById('kw-checks');
-  kwDiv.innerHTML = '';
-  kwSorted.forEach(term => {
-    const row = document.createElement('div');
-    row.className = 'check-row';
-    const id = 'k_' + term.replace(/\W/g,'_');
-    row.innerHTML = `
-      <input type="checkbox" id="${id}" checked data-kw="${term}">
-      <label for="${id}">${term}</label>
-      <span class="badge">${kwCount[term]}</span>`;
-    row.querySelector('input').addEventListener('change', e => {
-      if (e.target.checked) activeKw.add(term); else activeKw.delete(term);
-      render();
-    });
-    kwDiv.appendChild(row);
+    div.appendChild(row);
   });
 }
 
-// ── All-on buttons ──
 document.getElementById('btn-all-fund').addEventListener('click', () => {
-  document.querySelectorAll('[data-fund]').forEach(cb => { cb.checked = true; activeFund.add(cb.dataset.fund); });
-  render();
-});
-document.getElementById('btn-all-kw').addEventListener('click', () => {
-  document.querySelectorAll('[data-kw]').forEach(cb => { cb.checked = true; activeKw.add(cb.dataset.kw); });
+  document.querySelectorAll('[data-fund]').forEach(cb => {
+    cb.checked = true;
+    activeFund.add(cb.dataset.fund);
+  });
   render();
 });
 
 // ── Display toggles ──
 document.getElementById('show-labels').addEventListener('change', e => { showLabels = e.target.checked; render(); });
-document.getElementById('show-inst').addEventListener('change', e => { showInst = e.target.checked; render(); });
+document.getElementById('show-inst').addEventListener('change',   e => { showInst   = e.target.checked; render(); });
 document.getElementById('show-orphan').addEventListener('change', e => { showOrphan = e.target.checked; render(); });
 
 // ── Search ──
-document.getElementById('search').addEventListener('input', e => { searchQ = e.target.value.trim().toLowerCase(); render(); });
+document.getElementById('search').addEventListener('input', e => {
+  searchQ = e.target.value.trim().toLowerCase();
+  render();
+});
 
 // ═══════════════════════════════════════════════════════════════
 //  Filter projects
 // ═══════════════════════════════════════════════════════════════
 function filterProjects() {
   return allProjects.filter(p => {
+    // must match at least one active keyword
+    if (!p._matched_terms.some(t => activeKw.has(t))) return false;
+
     // funding filter
     if (!activeFund.has(fundKey(p.funding_scheme))) return false;
 
-    // keyword filter: project must have at least one active keyword
-    const terms = (p._matched_terms || []).map(t => t.toLowerCase().trim());
-    // if no matched_terms at all, include always (scheme-only match)
-    if (terms.length > 0 && !terms.some(t => activeKw.has(t))) return false;
-
-    // search filter
+    // free-text search
     if (searchQ) {
       const hay = [
-        p.title_en, p.title_nl, p.summary_en, p.summary_nl,
-        p._pi_name, p._pi_institution, p.project_id, p.funding_scheme
+        p.title_en, p.summary_en, p.summary_nl,
+        p._pi_name, p._pi_institution,
+        p.project_id, p.funding_scheme,
       ].filter(Boolean).join(' ').toLowerCase();
       if (!hay.includes(searchQ)) return false;
     }
@@ -516,65 +552,57 @@ function filterProjects() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  Build graph data
+//  Build graph data (nodes + links)
 // ═══════════════════════════════════════════════════════════════
 function buildGraph(projects) {
-  const nodes = [];
-  const links = [];
-  const instMap = new Map(); // name → node
+  const nodes = [], links = [];
+  const instMap = new Map();
 
   projects.forEach(p => {
-    const pid   = p.project_id || p.id || Math.random().toString(36).slice(2);
-    const title = p.title_en || p.title_nl || p.title || pid;
+    const pid   = String(p.project_id || Math.random().toString(36).slice(2));
+    const title = p.title_en || pid;
     const pNode = {
-      id:     pid,
-      type:   'project',
-      label:  title.length > 45 ? title.slice(0,42)+'…' : title,
+      id:        pid,
+      type:      'project',
+      label:     title.length > 45 ? title.slice(0,42)+'…' : title,
       fullTitle: title,
-      scheme: p.funding_scheme || '',
-      start:  (p.start_date||'').slice(0,4),
-      end:    (p.end_date||'').slice(0,4),
-      pi:     p._pi_name || '',
-      piInst: p._pi_institution || '',
-      terms:  p._matched_terms || [],
-      url:    p.project_page_url || p.url || '',
-      r:      6,
+      scheme:    p.funding_scheme || '',
+      start:     (p.start_date || '').slice(0, 4),
+      end:       (p.end_date   || '').slice(0, 4),
+      pi:        p._pi_name || '',
+      piInst:    p._pi_institution || '',
+      terms:     p._matched_terms || [],
+      url:       p.project_page_url || '',
+      r: 6,
     };
     nodes.push(pNode);
 
-    // extract institutions from project_members
     const members = p.project_members || [];
     const orgsForProject = new Set();
-
     members.forEach(m => {
       const orgStr = m.organisation || m.organization || '';
-      const orgParts = orgStr.split('||').map(s => s.trim()).filter(Boolean);
-      orgParts.forEach(org => {
-        if (!org || org.length < 2) return;
-        if (!orgsForProject.has(org)) {
-          orgsForProject.add(org);
-          if (!instMap.has(org)) {
-            const iNode = {
-              id:    'inst_' + org,
-              type:  'institution',
-              label: org.length > 35 ? org.slice(0,32)+'…' : org,
-              fullLabel: org,
-              r:     4,
-              count: 0,
-            };
-            instMap.set(org, iNode);
-            nodes.push(iNode);
-          }
-          instMap.get(org).count++;
-          links.push({ source: pid, target: 'inst_' + org });
+      orgStr.split('||').map(s => s.trim()).filter(s => s.length > 2).forEach(org => {
+        if (orgsForProject.has(org)) return;
+        orgsForProject.add(org);
+        if (!instMap.has(org)) {
+          const iNode = {
+            id:        'inst_' + org,
+            type:      'institution',
+            label:     org.length > 35 ? org.slice(0,32)+'…' : org,
+            fullLabel: org,
+            r: 4,
+            count: 0,
+          };
+          instMap.set(org, iNode);
+          nodes.push(iNode);
         }
+        instMap.get(org).count++;
+        links.push({ source: pid, target: 'inst_' + org });
       });
     });
   });
 
-  // adjust institution radius by connectivity
   instMap.forEach(n => { n.r = Math.min(3 + n.count * 0.8, 10); });
-
   return { nodes, links };
 }
 
@@ -583,78 +611,61 @@ function buildGraph(projects) {
 // ═══════════════════════════════════════════════════════════════
 function render() {
   const projects = filterProjects();
-  const { nodes: rawNodes, links: rawLinks } = buildGraph(projects);
+  let { nodes: rawNodes, links: rawLinks } = buildGraph(projects);
 
-  // optionally hide institutions
   let nodes, links;
   if (!showInst) {
     nodes = rawNodes.filter(n => n.type === 'project');
     links = [];
   } else {
-    // optionally hide orphan institutions (only 1 connection)
-    const instConnected = new Set(rawLinks.map(l => l.target));
     const instDegree = {};
-    rawLinks.forEach(l => { instDegree[l.target] = (instDegree[l.target]||0)+1; });
-
+    rawLinks.forEach(l => { instDegree[l.target] = (instDegree[l.target]||0) + 1; });
     nodes = rawNodes.filter(n => {
       if (n.type === 'project') return true;
-      if (!showOrphan && instDegree['inst_' + n.fullLabel] <= 1 && instDegree[n.id] <= 1) {
-        // check by id
-        const deg = rawLinks.filter(l => l.target === n.id || l.source === n.id).length;
-        return deg > 1;
-      }
-      return true;
+      const deg = rawLinks.filter(l => l.target === n.id || l.source === n.id).length;
+      return showOrphan || deg > 1;
     });
     const nodeIds = new Set(nodes.map(n => n.id));
     links = rawLinks.filter(l => nodeIds.has(l.source) && nodeIds.has(l.target));
   }
 
   // stats
-  const nProj = nodes.filter(n => n.type==='project').length;
-  const nInst = nodes.filter(n => n.type==='institution').length;
+  const nP = nodes.filter(n => n.type==='project').length;
+  const nI = nodes.filter(n => n.type==='institution').length;
   document.getElementById('stats').textContent =
-    `${nProj} projects · ${nInst} institutions · ${links.length} links`;
+    `${nP} projects · ${nI} institutions · ${links.length} links`;
 
-  // hide/show no-data panel
-  document.getElementById('no-data').style.display = allProjects.length === 0 ? 'block' : 'none';
-
-  // stop old simulation
   if (simulation) simulation.stop();
-
-  // clear
   linkG.selectAll('*').remove();
   nodeG.selectAll('*').remove();
   labelG.selectAll('*').remove();
-
   if (nodes.length === 0) return;
 
-  // initialise positions around centre
   const W = svg.node().clientWidth  || 900;
   const H = svg.node().clientHeight || 600;
+
   nodes.forEach(n => {
     if (n.x === undefined) {
-      n.x = W/2 + (Math.random()-0.5)*120;
-      n.y = H/2 + (Math.random()-0.5)*120;
+      n.x = W/2 + (Math.random()-0.5)*100;
+      n.y = H/2 + (Math.random()-0.5)*100;
     }
   });
 
   // ── Links ──
   const link = linkG.selectAll('line')
-    .data(links)
-    .join('line')
+    .data(links).join('line')
     .attr('stroke', '#2a2a5a')
     .attr('stroke-width', 0.8)
     .attr('stroke-opacity', 0.6);
 
   // ── Nodes ──
   const node = nodeG.selectAll('circle')
-    .data(nodes, d => d.id)
-    .join('circle')
+    .data(nodes, d => d.id).join('circle')
     .attr('r', d => d.r)
-    .attr('fill', d => d.type === 'project' ? fundColor(d.scheme) : '#4a90d9')
-    .attr('fill-opacity', d => d.type === 'project' ? 0.9 : 0.65)
-    .attr('stroke', d => d.type === 'project' ? '#fff' : '#aaa')
-    .attr('stroke-width', d => d.type === 'project' ? 0.8 : 0.4)
+    .attr('fill', d => d.type==='project' ? fundColor(d.scheme) : '#4a90d9')
+    .attr('fill-opacity', d => d.type==='project' ? 0.9 : 0.65)
+    .attr('stroke', d => d.type==='project' ? '#fff' : '#aaa')
+    .attr('stroke-width', d => d.type==='project' ? 0.8 : 0.4)
     .style('cursor', 'pointer')
     .call(d3.drag()
       .on('start', dragStart)
@@ -667,24 +678,24 @@ function render() {
           <div class="tt-meta">
             <b>Scheme:</b> ${escHtml(d.scheme)}<br>
             <b>Period:</b> ${d.start||'?'} – ${d.end||'?'}<br>
-            ${d.pi ? `<b>PI:</b> ${escHtml(d.pi)}<br>` : ''}
-            ${d.piInst ? `<b>Institution:</b> ${escHtml(d.piInst)}<br>` : ''}
+            ${d.pi    ? `<b>PI:</b> ${escHtml(d.pi)}<br>` : ''}
+            ${d.piInst? `<b>Institution:</b> ${escHtml(d.piInst)}<br>` : ''}
           </div>
           ${d.terms.length ? `<div class="tt-terms">🏷 ${d.terms.join(' · ')}</div>` : ''}
-          ${d.url ? `<div style="margin-top:5px"><a href="${escHtml(d.url)}" target="_blank">Project page ↗</a></div>` : ''}`;
+          ${d.url ? `<div style="margin-top:5px"><a href="${escHtml(d.url)}" target="_blank">NWO project page ↗</a></div>` : ''}`;
       } else {
         html = `<h3 style="color:#4a90d9">${escHtml(d.fullLabel)}</h3>
-          <div class="tt-meta">Research institution</div>`;
+          <div class="tt-meta">Research institution · ${d.count} project(s)</div>`;
       }
       showTip(evt, html);
-      // highlight connected
       link.attr('stroke-opacity', l =>
-        (l.source.id===d.id||l.target.id===d.id) ? 1 : 0.1)
-         .attr('stroke', l =>
-        (l.source.id===d.id||l.target.id===d.id) ? '#f5a623' : '#2a2a5a');
+          (l.source.id===d.id||l.target.id===d.id) ? 1 : 0.08)
+        .attr('stroke', l =>
+          (l.source.id===d.id||l.target.id===d.id) ? '#f5a623' : '#2a2a5a');
       node.attr('fill-opacity', n =>
         n.id===d.id ? 1 :
-        links.some(l=>(l.source.id===d.id&&l.target.id===n.id)||(l.target.id===d.id&&l.source.id===n.id)) ? 0.95 : 0.2);
+        links.some(l=>(l.source.id===d.id&&l.target.id===n.id)||(l.target.id===d.id&&l.source.id===n.id))
+          ? 0.95 : 0.2);
     })
     .on('mousemove', moveTip)
     .on('mouseout', () => {
@@ -692,12 +703,10 @@ function render() {
       link.attr('stroke-opacity', 0.6).attr('stroke', '#2a2a5a');
       node.attr('fill-opacity', d => d.type==='project' ? 0.9 : 0.65);
     })
-    .on('click', (evt, d) => {
-      if (d.url) window.open(d.url, '_blank');
-    });
+    .on('click', (evt, d) => { if (d.url) window.open(d.url, '_blank'); });
 
-  // ── Labels (projects only) ──
-  const label = labelG.selectAll('text')
+  // ── Labels ──
+  labelG.selectAll('text')
     .data(showLabels ? nodes.filter(n=>n.type==='project') : [], d => d.id)
     .join('text')
     .text(d => d.label)
@@ -708,114 +717,84 @@ function render() {
 
   // ── Simulation ──
   simulation = d3.forceSimulation(nodes)
-    .force('link', d3.forceLink(links).id(d=>d.id).distance(d =>
-      d.source.type==='project' ? 29 : 23).strength(0.6))
-    .force('charge', d3.forceManyBody().strength(d =>
-      d.type==='project' ? -24 : -12))
-    .force('collide', d3.forceCollide(d => d.type==='project' ? 8 : 4))
-    .force('center', d3.forceCenter(W/2, H/2).strength(0.15))
-    .force('x', d3.forceX(W/2).strength(0.08))
-    .force('y', d3.forceY(H/2).strength(0.08))
+    .force('link',   d3.forceLink(links).id(d=>d.id)
+                       .distance(d => d.source.type==='project' ? 22 : 18)
+                       .strength(0.7))
+    .force('charge', d3.forceManyBody().strength(d => d.type==='project' ? -18 : -8))
+    .force('collide',d3.forceCollide(d => d.type==='project' ? 8 : 4))
+    .force('center', d3.forceCenter(W/2, H/2).strength(0.18))
+    .force('x',      d3.forceX(W/2).strength(0.10))
+    .force('y',      d3.forceY(H/2).strength(0.10))
     .alphaDecay(0.025)
     .on('tick', ticked)
-    .on('end', fitView);
+    .on('end',  fitView);
 
   function ticked() {
     link
-      .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
-      .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
-    node
-      .attr('cx', d => d.x).attr('cy', d => d.y);
-    label
-      .attr('x', d => d.x).attr('y', d => d.y);
+      .attr('x1', d=>d.source.x).attr('y1', d=>d.source.y)
+      .attr('x2', d=>d.target.x).attr('y2', d=>d.target.y);
+    node.attr('cx', d=>d.x).attr('cy', d=>d.y);
+    labelG.selectAll('text').attr('x', d=>d.x).attr('y', d=>d.y);
   }
 
-  // ── Auto-fit: zoom to show all nodes with padding after simulation settles ──
+  // ── Auto-fit: zoom to bounding box of all nodes ──
   function fitView() {
-    const padding = 40;
-    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    const pad = 40;
+    let x0=Infinity, y0=Infinity, x1=-Infinity, y1=-Infinity;
     nodes.forEach(n => {
-      x0 = Math.min(x0, n.x - n.r);
-      y0 = Math.min(y0, n.y - n.r);
-      x1 = Math.max(x1, n.x + n.r);
-      y1 = Math.max(y1, n.y + n.r);
+      x0=Math.min(x0,n.x-n.r); y0=Math.min(y0,n.y-n.r);
+      x1=Math.max(x1,n.x+n.r); y1=Math.max(y1,n.y+n.r);
     });
-    const bW = x1 - x0 || 1, bH = y1 - y0 || 1;
-    const scale = Math.min(0.95, Math.min((W - padding*2) / bW, (H - padding*2) / bH));
-    const tx = W/2 - scale * (x0 + bW/2);
-    const ty = H/2 - scale * (y0 + bH/2);
+    const bW=x1-x0||1, bH=y1-y0||1;
+    const scale = Math.min(0.95, Math.min((W-pad*2)/bW, (H-pad*2)/bH));
+    const tx = W/2 - scale*(x0+bW/2);
+    const ty = H/2 - scale*(y0+bH/2);
     svg.transition().duration(800)
-      .call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+      .call(zoom.transform, d3.zoomIdentity.translate(tx,ty).scale(scale));
   }
 
   function dragStart(evt, d) {
     if (!evt.active) simulation.alphaTarget(0.3).restart();
-    d.fx = d.x; d.fy = d.y;
+    d.fx=d.x; d.fy=d.y;
   }
-  function dragged(evt, d) { d.fx = evt.x; d.fy = evt.y; }
+  function dragged(evt, d) { d.fx=evt.x; d.fy=evt.y; }
   function dragEnd(evt, d) {
     if (!evt.active) simulation.alphaTarget(0);
-    d.fx = null; d.fy = null;
+    d.fx=null; d.fy=null;
   }
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  Load data
+//  Ingest annotated data
 // ═══════════════════════════════════════════════════════════════
 function ingest(raw) {
-  try {
-    allProjects = parseProjects(raw);
-    buildFilters(allProjects);
+  document.getElementById('loading-msg').textContent = 'Annotating projects…';
+  // yield to browser paint, then process
+  setTimeout(() => {
+    allProjects = annotate(raw);
+    // keep only projects that match at least one keyword
+    const matched = allProjects.filter(p => p._matched_terms.length > 0);
+    allProjects = matched;
+
+    buildKwPills();
+    buildFundFilters(allProjects);
+
+    document.getElementById('loading').style.display = 'none';
     render();
-    document.getElementById('no-data').style.display = 'none';
-  } catch(e) {
-    showError('Parse error: ' + e.message);
-  }
+  }, 30);
 }
 
-function showError(msg) {
-  document.getElementById('load-error').textContent = msg;
-  document.getElementById('no-data').style.display = 'block';
-}
-
-// ── File picker ──
-document.getElementById('file-btn').addEventListener('click', () =>
-  document.getElementById('file-input').click());
-
-document.getElementById('file-input').addEventListener('change', evt => {
-  const file = evt.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try { ingest(JSON.parse(e.target.result)); }
-    catch(err) { showError('Cannot parse JSON: ' + err.message); }
-  };
-  reader.readAsText(file);
-});
-
-// ── Drag & drop onto graph area ──
-const graphWrap = document.getElementById('graph-wrap');
-graphWrap.addEventListener('dragover', e => e.preventDefault());
-graphWrap.addEventListener('drop', e => {
-  e.preventDefault();
-  const file = e.dataTransfer.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    try { ingest(JSON.parse(ev.target.result)); }
-    catch(err) { showError('Cannot parse dropped file: ' + err.message); }
-  };
-  reader.readAsText(file);
-});
-
-// ── Auto-load via fetch (works when served over HTTP/S) ──
+// ═══════════════════════════════════════════════════════════════
+//  Auto-load nwo_textile_raw.json
+// ═══════════════════════════════════════════════════════════════
 (async function autoLoad() {
   const candidates = [
-    'nwo_fashion_textile_filtered.json',
-    './nwo_fashion_textile_filtered.json',
+    'nwo_textile_raw.json',
+    './nwo_textile_raw.json',
   ];
   for (const url of candidates) {
     try {
+      document.getElementById('loading-msg').textContent = `Fetching ${url}…`;
       const resp = await fetch(url);
       if (!resp.ok) continue;
       const data = await resp.json();
@@ -823,7 +802,8 @@ graphWrap.addEventListener('drop', e => {
       return;
     } catch (_) { /* try next */ }
   }
-  // Not found over HTTP — show manual picker (already visible)
+  document.getElementById('loading').innerHTML =
+    '<p style="color:#e53935">Could not load nwo_textile_raw.json.<br>Serve this file over HTTP alongside the JSON.</p>';
 })();
 
 // ═══════════════════════════════════════════════════════════════
