@@ -853,11 +853,29 @@ function buildAdjacency(links){
   });
 }
 
+// HOVER PREVIEW — brighten connected links only, no background dimming
+function applyHoverPreview(focusDatum){
+  if(!_nodeSel||!_linkSel) return;
+  if(!focusDatum){
+    _linkSel.classed('h-lit',false);
+    _nodeSel.classed('h-pin',false);
+    return;
+  }
+  const fid=focusDatum.id;
+  _linkSel.classed('h-lit',d=>{
+    const s=typeof d.source==='object'?d.source.id:d.source;
+    const t=typeof d.target==='object'?d.target.id:d.target;
+    return s===fid||t===fid;
+  });
+  // Glow only the hovered node itself, nothing else
+  _nodeSel.classed('h-pin', d=> d===focusDatum);
+}
+
+// PIN HIGHLIGHT — full dim of unrelated nodes + links, used on click
 function applyHoverHighlight(focusDatum){
   if(!_nodeSel||!_linkSel) return;
 
   if(!focusDatum){
-    // Clear all hover classes
     _nodeSel.classed('h-dim',false).classed('h-lit',false).classed('h-pin',false);
     _linkSel.classed('h-dim',false).classed('h-lit',false);
     return;
@@ -883,8 +901,8 @@ function applyHoverHighlight(focusDatum){
 }
 
 function clearHoverHighlight(){
-  if(pinnedNode) return;   // keep highlight if something is pinned
-  applyHoverHighlight(null);
+  if(pinnedNode) return;   // keep pin highlight while something is pinned
+  applyHoverPreview(null); // only clear the lightweight preview
 }
 
 function render(){
@@ -936,8 +954,8 @@ function render(){
     )
     .on('mouseover',(e,d)=>{
       showTT(e,d);
-      // Preview neighbours unless something is already pinned
-      if(!pinnedNode) applyHoverHighlight(d);
+      // Hover: brighten links only — no background dimming
+      if(!pinnedNode) applyHoverPreview(d);
     })
     .on('mousemove', moveTT)
     .on('mouseout', (e,d)=>{
