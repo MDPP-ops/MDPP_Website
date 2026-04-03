@@ -406,9 +406,10 @@ const DEFAULT_KEYWORDS = [
   'smart textile',
   'duurzame mode',
   'textile lifecycle','textile value chain',
-  'hergebruik','biobased','wearable',
+  'hergebruik','wearable',
   'textile supply chain','waardeketen','levenscyclus',
-  'biomaterial','coating','hemp','hennep',
+  'hemp','hennep',
+  'footwear','shoes','clothing','cloth','yarn','thread','flax',
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -441,7 +442,7 @@ function fundColor(s) { return FUND_COLOR[fundKey(s)] || FUND_COLOR.other; }
 let allProjects  = [];      // all 4090 annotated
 let keywords     = [...DEFAULT_KEYWORDS];  // current keyword list
 // textile/textiel/garment/fashion on by default; empty = show all
-let activeKw     = new Set(['textile','textiel','garment','fashion']);
+let activeKw     = new Set(['garment','clothing','textile','footwear','shoes','leather','fashion']);
 let activeFund   = new Set();
 let searchQ      = '';
 let showLabels   = false;

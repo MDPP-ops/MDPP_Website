@@ -45,9 +45,10 @@ KEYWORDS = [
     "smart textile",
     "duurzame mode",
     "textile lifecycle", "textile value chain",
-    "hergebruik", "biobased", "wearable",
+    "hergebruik", "wearable",
     "textile supply chain", "waardeketen", "levenscyclus",
-    "biomaterial", "coating", "hemp", "hennep",
+    "hemp", "hennep",
+    "footwear", "shoes", "clothing", "cloth", "yarn", "thread", "flax",
 ]
 
 # ─── Programme registry ──────────────────────────────────────────────────────

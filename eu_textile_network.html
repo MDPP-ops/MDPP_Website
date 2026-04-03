@@ -359,9 +359,10 @@ const DEFAULT_KEYWORDS = [
   'recycled textile','circular textile','circular fashion',
   'circulair textiel','textiel recycling','smart textile',
   'duurzame mode','textile lifecycle','textile value chain',
-  'hergebruik','biobased','wearable',
+  'hergebruik','wearable',
   'textile supply chain','waardeketen','levenscyclus',
-  'biomaterial','coating','hemp','hennep',
+  'hemp','hennep',
+  'footwear','shoes','clothing','cloth','yarn','thread','flax',
 ];
 
 const MAX_PROJ_GRAPH  = 550;
@@ -373,7 +374,7 @@ const MAX_PARTNERS_PP = 6;
 // ══════════════════════════════════════════════════════════════════════════
 let allProjects  = [];
 let metaTotals   = { erasmus:0, cordis:0 };
-let activeKw     = new Set(DEFAULT_KEYWORDS);
+let activeKw     = new Set(['garment','clothing','textile','footwear','shoes','leather','fashion']);
 let activeSrc    = 'both';
 let activeMode   = 'proj';
 let nlOnly       = true;
@@ -445,6 +446,7 @@ function computeDisplayName(p) {
 }
 
 function projectYear(p) {
+  // Returns the most relevant single year for display purposes
   // Erasmus uses call_year; CORDIS uses start_date (YYYY-MM-DD)
   if (p._src === 'erasmus') {
     const cy = parseInt(p.call_year);
@@ -456,6 +458,39 @@ function projectYear(p) {
     return isNaN(yr) ? null : yr;
   }
   return null;
+}
+
+function extractYear(dateStr) {
+  if (!dateStr) return null;
+  const s = String(dateStr).trim();
+  if (s.length >= 4) { const y = parseInt(s.slice(0, 4)); return isNaN(y) ? null : y; }
+  return null;
+}
+
+function projectActiveInRange(p, rangeMin, rangeMax) {
+  // A project is "active during [rangeMin, rangeMax]" if its period OVERLAPS
+  // with the range:  startYear <= rangeMax  AND  endYear >= rangeMin
+  //
+  // Erasmus: only call_year available — treat as both start and end
+  // CORDIS: has start_date and end_date (YYYY-MM-DD)
+  // Projects with no date info pass through (don't filter them out)
+
+  if (p._src === 'erasmus') {
+    const cy = parseInt(p.call_year);
+    if (isNaN(cy)) return true;            // no date → pass
+    return cy >= rangeMin && cy <= rangeMax;
+  }
+
+  const startYr = extractYear(p.start_date);
+  const endYr   = extractYear(p.end_date);
+
+  // If both missing → pass through
+  if (startYr === null && endYr === null) return true;
+
+  // Overlap test: project starts before range ends AND project ends after range starts
+  const projStart = startYr !== null ? startYr : 0;
+  const projEnd   = endYr   !== null ? endYr   : 9999;
+  return projStart <= rangeMax && projEnd >= rangeMin;
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -507,9 +542,8 @@ function filteredProjects() {
     if(!activeProgs.has(p._progKey)) return false;
     if(nlOnly && !p._isNL) return false;
     if(activeKw.size>0 && !(p._matched_terms||[]).some(t=>activeKw.has(t))) return false;
-    // Year range filter — projects with no year data pass through
-    const yr = projectYear(p);
-    if(yr !== null && (yr < yearMin || yr > yearMax)) return false;
+    // Year range filter — "was this project active during [yearMin, yearMax]?"
+    if(!projectActiveInRange(p, yearMin, yearMax)) return false;
     return true;
   });
 }
@@ -753,7 +787,7 @@ svg.on('click',()=>{
   if(pinnedNode){ pinnedNode=null; applyHoverHighlight(null); }
 });
 
-let _nodeSel=null, _linkSel=null;   // keep reference for highlight updates
+let _nodeSel=null, _linkSel=null, _labelSel=null, _projLabelSel=null;
 
 function getWH(){ const el=document.getElementById('canvas-wrap'); return [el.clientWidth,el.clientHeight]; }
 
@@ -897,6 +931,26 @@ function applyHoverPreview(focusDatum){
   _nodeSel.classed('h-pin', d=> d===focusDatum);
 }
 
+// UPDATE LABELS — show for pinned neighbourhood only (or all if checkbox on)
+function updatePinLabels(focusDatum){
+  if(!_labelSel||!_projLabelSel) return;
+  if(!focusDatum){
+    // No pin — revert to checkbox state
+    _labelSel.style('display', showLabels ? null : 'none');
+    _projLabelSel.style('display', 'none');
+    return;
+  }
+  const fid=focusDatum.id;
+  const nbrs=neighborMap.get(fid)||new Set();
+  // Org/country labels: show for neighbours of pinned node (or all if checkbox)
+  _labelSel.style('display', d=>{
+    if(showLabels) return null;  // checkbox overrides — always show
+    return nbrs.has(d.id) ? null : 'none';
+  });
+  // Project labels: show only for the pinned project node
+  _projLabelSel.style('display', d=> d.id===fid ? null : 'none');
+}
+
 // PIN HIGHLIGHT — full dim of unrelated nodes + links, used on click
 function applyHoverHighlight(focusDatum){
   if(!_nodeSel||!_linkSel) return;
@@ -904,6 +958,7 @@ function applyHoverHighlight(focusDatum){
   if(!focusDatum){
     _nodeSel.classed('h-dim',false).classed('h-lit',false).classed('h-pin',false);
     _linkSel.classed('h-dim',false).classed('h-lit',false);
+    updatePinLabels(null);
     return;
   }
 
@@ -924,6 +979,8 @@ function applyHoverHighlight(focusDatum){
     const t=typeof d.target==='object'?d.target.id:d.target;
     return s!==fid&&t!==fid;
   });
+
+  updatePinLabels(focusDatum);
 }
 
 function clearHoverHighlight(){
@@ -1001,6 +1058,7 @@ function render(){
       }
     });
 
+  // Org/country labels — shown when Labels checkbox ON, or for pinned neighbourhood
   const labelSel=g.append('g').selectAll('text')
     .data(nodes.filter(d=>d.type!=='project'))
     .enter().append('text')
@@ -1013,7 +1071,20 @@ function render(){
     .style('user-select','none')
     .style('display', showLabels ? null : 'none');
 
-  _nodeSel=nodeSel; _linkSel=linkSel;
+  // Project labels — only shown for pinned node
+  const projLabelSel=g.append('g').selectAll('text')
+    .data(nodes.filter(d=>d.type==='project'))
+    .enter().append('text')
+    .text(d=>(d.data?._display_name||d.data?.title_en||'').slice(0,36))
+    .attr('font-size',8)
+    .attr('fill','#f72585')
+    .attr('text-anchor','middle')
+    .attr('dy',-9)
+    .style('pointer-events','none')
+    .style('user-select','none')
+    .style('display','none');
+
+  _nodeSel=nodeSel; _linkSel=linkSel; _labelSel=labelSel; _projLabelSel=projLabelSel;
   applyGraphHighlight();
 
   simulation=d3.forceSimulation(nodes)
@@ -1031,6 +1102,7 @@ function render(){
              .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
       nodeSel.attr('cx',d=>d.x).attr('cy',d=>d.y);
       labelSel.attr('x',d=>d.x).attr('y',d=>d.y);
+      projLabelSel.attr('x',d=>d.x).attr('y',d=>d.y);
     })
     .on('end',()=>fitView(nodes));
 }
@@ -1215,8 +1287,13 @@ scEl.addEventListener('click',()=>{
 // Labels toggle
 document.getElementById('labelsToggle').addEventListener('change',e=>{
   showLabels=e.target.checked;
-  // Update live without full re-render
-  g.selectAll('text').style('display', showLabels ? null : 'none');
+  // Re-apply label visibility respecting pin state
+  if(pinnedNode){
+    updatePinLabels(pinnedNode);
+  } else {
+    if(_labelSel)     _labelSel.style('display', showLabels ? null : 'none');
+    if(_projLabelSel) _projLabelSel.style('display', 'none');
+  }
 });
 
 // Org search filter
