@@ -30,6 +30,29 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0d1117;c
 .s-pct   b{color:#3fb950}
 .s-fund  b{color:#d2a8ff}
 
+/* ── Year range ──────────────────────────────────────────────────────── */
+.yr-wrap{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.yr-label{font-size:11px;color:#8b949e}
+.yr-track{position:relative;width:160px;height:20px;display:flex;align-items:center}
+.yr-track input[type=range]{
+  position:absolute;width:100%;pointer-events:none;
+  -webkit-appearance:none;appearance:none;
+  height:3px;border-radius:2px;background:transparent;outline:none;
+}
+.yr-track input[type=range]::-webkit-slider-thumb{
+  pointer-events:all;-webkit-appearance:none;appearance:none;
+  width:13px;height:13px;border-radius:50%;cursor:pointer;
+  border:1.5px solid #30363d;
+}
+#yrFrom::-webkit-slider-thumb{background:#58a6ff}
+#yrTo::-webkit-slider-thumb  {background:#3fb950}
+.yr-fill{
+  position:absolute;height:3px;border-radius:2px;
+  background:linear-gradient(90deg,#58a6ff,#3fb950);
+  pointer-events:none;
+}
+.yr-vals{font-size:11px;color:#e6edf3;font-weight:600;min-width:68px;text-align:center}
+
 #searchBox{padding:3px 9px;font-size:11px;border-radius:5px;border:1px solid #30363d;background:#0d1117;color:#e6edf3;width:165px;transition:border-color .15s}
 #searchBox:focus{outline:none;border-color:#58a6ff}
 #searchBox.has-match{border-color:#3fb950}
@@ -151,6 +174,23 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0d1117;c
 .node-org {cursor:pointer}
 .node-proj.dimmed,.node-org.dimmed,.link.dimmed{opacity:0.08}
 .node-proj.lit{stroke-width:3!important;filter:drop-shadow(0 0 6px #3fb950)}
+
+/* ── Hover / pin connection highlight ──────────────────────────────────── */
+/* h-lit  = this node or link is part of the hovered/pinned neighbourhood  */
+/* h-dim  = this node or link is NOT in the neighbourhood — fade it out     */
+/* h-pin  = the specific pinned (clicked) node — extra strong glow          */
+.node-proj.h-dim,.node-org.h-dim{opacity:0.06!important;transition:opacity .15s}
+.link.h-dim                     {opacity:0.04!important;transition:opacity .15s}
+.node-proj.h-lit,.node-org.h-lit{opacity:1  !important;transition:opacity .15s}
+.link.h-lit                     {opacity:1  !important;stroke-width:2.5!important;transition:opacity .15s,stroke-width .1s}
+/* pin glow adapts to node colour via currentColor */
+.node-proj.h-pin{stroke-width:3.5!important;filter:drop-shadow(0 0 8px #f72585)!important}
+.node-org-nl.h-pin   {stroke-width:3.5!important;filter:drop-shadow(0 0 8px #fb923c)!important}
+.node-org-other.h-pin{stroke-width:3.5!important;filter:drop-shadow(0 0 8px #60a5fa)!important}
+.node-country.h-pin  {stroke-width:3.5!important;filter:drop-shadow(0 0 8px #22d3ee)!important}
+/* cursor hints */
+.node-proj,.node-org{cursor:pointer}
+svg#graph-svg{cursor:default}
 .node-org-nl.org-glow   {stroke-width:3!important;filter:drop-shadow(0 0 7px #fb923c)}
 .node-org-other.org-glow{stroke-width:3!important;filter:drop-shadow(0 0 7px #60a5fa)}
 .link.link-hi{opacity:0.9!important;stroke-width:2.5!important}
@@ -199,6 +239,18 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0d1117;c
   <div class="btn-group" id="modeGroup">
     <button class="tog-btn active" data-mode="proj">Project</button>
     <button class="tog-btn"        data-mode="country">Country</button>
+  </div>
+  <div class="vsep"></div>
+
+  <!-- Year range -->
+  <div class="yr-wrap">
+    <span class="yr-label">Years</span>
+    <div class="yr-track">
+      <div class="yr-fill" id="yrFill"></div>
+      <input type="range" id="yrFrom" min="2010" max="2027" value="2016" step="1">
+      <input type="range" id="yrTo"   min="2010" max="2027" value="2026" step="1">
+    </div>
+    <span class="yr-vals" id="yrVals">2016 – 2026</span>
   </div>
   <div class="vsep"></div>
 
@@ -306,7 +358,7 @@ const DEFAULT_KEYWORDS = [
   'zijde','polyester','denim','leather','fabric','dye',
   'recycled textile','circular textile','circular fashion',
   'circulair textiel','textiel recycling','smart textile',
-  'duurzame mode','lifecycle','textile value chain',
+  'duurzame mode','textile lifecycle','textile value chain',
   'hergebruik','biobased','wearable',
   'textile supply chain','waardeketen','levenscyclus',
   'biomaterial','coating','hemp','hennep',
@@ -335,6 +387,10 @@ let simulation   = null;
 let activePanel  = 'proj';          // 'proj' | 'orgs'
 let orgFilter    = '';
 let showLabels   = false;           // labels off by default
+let pinnedNode   = null;            // datum of the currently pinned (clicked) node
+let neighborMap  = new Map();       // nodeId → Set<neighborId> (rebuilt each render)
+let yearMin      = 2016;            // inclusive lower bound
+let yearMax      = 2026;            // inclusive upper bound
 
 // ══════════════════════════════════════════════════════════════════════════
 // HELPERS
@@ -365,6 +421,20 @@ function isNL(p) {
 
 function isCoord(role) {
   return COORD_ROLES.has((role||'').toLowerCase().replace(/[_-]/g,' ').trim());
+}
+
+function projectYear(p) {
+  // Erasmus uses call_year; CORDIS uses start_date (YYYY-MM-DD)
+  if (p._src === 'erasmus') {
+    const cy = parseInt(p.call_year);
+    return isNaN(cy) ? null : cy;
+  }
+  const sd = String(p.start_date || '');
+  if (sd.length >= 4) {
+    const yr = parseInt(sd.slice(0, 4));
+    return isNaN(yr) ? null : yr;
+  }
+  return null;
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -415,6 +485,9 @@ function filteredProjects() {
     if(!activeProgs.has(p._progKey)) return false;
     if(nlOnly && !p._isNL) return false;
     if(activeKw.size>0 && !(p._matched_terms||[]).some(t=>activeKw.has(t))) return false;
+    // Year range filter — projects with no year data pass through
+    const yr = projectYear(p);
+    if(yr !== null && (yr < yearMin || yr > yearMax)) return false;
     return true;
   });
 }
@@ -590,6 +663,7 @@ function updateProjList(projects) {
     const bc=pk==='erasmus'?'erasmus':pk==='h2020'?'h2020':'he';
     const bl=pk==='erasmus'?'E+':pk==='h2020'?'H2020':'HE';
     const grant=p.ec_grant_num?fmtEuro(p.ec_grant_num):'';
+    const yr=projectYear(p);
 
     // Find NL orgs in this project (PI vs partner)
     const nlPIs=[], nlPTs=[];
@@ -604,8 +678,9 @@ function updateProjList(projects) {
       <div class="proj-title">${esc((p.title_en||'').slice(0,120))}</div>
       <div class="proj-meta">
         <span class="prog-badge ${bc}">${bl}</span>
+        ${yr?`<span style="color:#484f58">${yr}</span>`:''}
         ${grant?`<span style="color:#d2a8ff">${grant}</span>`:''}
-        ${nlPIs.length?`<span style="color:#e3b341;font-size:9px" title="NL PI: ${esc(nlPIs[0])}">🎯 ${esc(nlPIs[0].slice(0,22))}</span>`:''}
+        ${nlPIs.length?`<span style="color:#fb923c;font-size:9px" title="NL PI: ${esc(nlPIs[0])}">🎯 ${esc(nlPIs[0].slice(0,22))}</span>`:''}
         ${nlPTs.length&&!nlPIs.length?`<span style="color:#a371f7;font-size:9px" title="NL Partner">🔗 NL</span>`:''}
       </div>`;
     div.addEventListener('click',()=>{
@@ -646,6 +721,11 @@ const g  =svg.append('g');
 const zoom=d3.zoom().scaleExtent([0.02,12])
   .on('zoom',e=>g.attr('transform',e.transform));
 svg.call(zoom);
+
+// Click on empty canvas → unpin
+svg.on('click',()=>{
+  if(pinnedNode){ pinnedNode=null; applyHoverHighlight(null); }
+});
 
 let _nodeSel=null, _linkSel=null;   // keep reference for highlight updates
 
@@ -757,6 +837,56 @@ function buildGraphCountry(projects){
   return {nodes,links};
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// HOVER / PIN HIGHLIGHT
+// ══════════════════════════════════════════════════════════════════════════
+function buildAdjacency(links){
+  // Call BEFORE simulation resolves source/target to objects — ids are still strings
+  neighborMap=new Map();
+  links.forEach(l=>{
+    const s=typeof l.source==='object'?l.source.id:l.source;
+    const t=typeof l.target==='object'?l.target.id:l.target;
+    if(!neighborMap.has(s)) neighborMap.set(s,new Set());
+    if(!neighborMap.has(t)) neighborMap.set(t,new Set());
+    neighborMap.get(s).add(t);
+    neighborMap.get(t).add(s);
+  });
+}
+
+function applyHoverHighlight(focusDatum){
+  if(!_nodeSel||!_linkSel) return;
+
+  if(!focusDatum){
+    // Clear all hover classes
+    _nodeSel.classed('h-dim',false).classed('h-lit',false).classed('h-pin',false);
+    _linkSel.classed('h-dim',false).classed('h-lit',false);
+    return;
+  }
+
+  const fid=focusDatum.id;
+  const nbrs=neighborMap.get(fid)||new Set();
+
+  _nodeSel
+    .classed('h-lit', d=> d.id===fid || nbrs.has(d.id))
+    .classed('h-dim', d=> d.id!==fid && !nbrs.has(d.id))
+    .classed('h-pin', d=> d===pinnedNode);
+
+  _linkSel.classed('h-lit',d=>{
+    const s=typeof d.source==='object'?d.source.id:d.source;
+    const t=typeof d.target==='object'?d.target.id:d.target;
+    return s===fid||t===fid;
+  }).classed('h-dim',d=>{
+    const s=typeof d.source==='object'?d.source.id:d.source;
+    const t=typeof d.target==='object'?d.target.id:d.target;
+    return s!==fid&&t!==fid;
+  });
+}
+
+function clearHoverHighlight(){
+  if(pinnedNode) return;   // keep highlight if something is pinned
+  applyHoverHighlight(null);
+}
+
 function render(){
   const projects=filteredProjects();
   applySearch(projects);
@@ -768,11 +898,15 @@ function render(){
   if(simulation) simulation.stop();
   g.selectAll('*').remove();
   _nodeSel=null; _linkSel=null;
+  pinnedNode=null;             // reset pin on full re-render
+  neighborMap=new Map();
   if(!projects.length) return;
 
   const [W,H]=getWH();
   const {nodes,links}=activeMode==='country'?buildGraphCountry(projects):buildGraphProj(projects);
   if(!nodes.length) return;
+
+  buildAdjacency(links);   // must come before simulation resolves ids to objects
 
   const linkSel=g.append('g').selectAll('line').data(links).enter()
     .append('line')
@@ -800,10 +934,28 @@ function render(){
       .on('drag', (e,d)=>{d.fx=e.x;d.fy=e.y;})
       .on('end',  (e,d)=>{if(!e.active)simulation.alphaTarget(0);d.fx=null;d.fy=null;})
     )
-    .on('mouseover',showTT)
-    .on('mousemove',moveTT)
-    .on('mouseout', hideTT)
-    .on('click',    clickNode);
+    .on('mouseover',(e,d)=>{
+      showTT(e,d);
+      // Preview neighbours unless something is already pinned
+      if(!pinnedNode) applyHoverHighlight(d);
+    })
+    .on('mousemove', moveTT)
+    .on('mouseout', (e,d)=>{
+      hideTT();
+      clearHoverHighlight();
+    })
+    .on('click',(e,d)=>{
+      e.stopPropagation();   // prevent svg background click from firing
+      if(pinnedNode===d){
+        // Second click on same node → unpin
+        pinnedNode=null;
+        applyHoverHighlight(null);
+      } else {
+        // Click new node → pin it
+        pinnedNode=d;
+        applyHoverHighlight(d);
+      }
+    });
 
   const labelSel=g.append('g').selectAll('text')
     .data(nodes.filter(d=>d.type!=='project'))
@@ -851,12 +1003,15 @@ function showTT(e,d){
     const partners=(p.project_members||[]).filter(m=>!isCoord(m.role)).slice(0,4);
     const nlParts=(p.project_members||[]).filter(m=>NL_CODES.has((m.country||'').toUpperCase()));
     const grant=p.ec_grant_num?fmtEuro(p.ec_grant_num):'';
+    const kws=(p._matched_terms||[]).filter(k=>activeKw.has(k));
+    const pyr=projectYear(p);
     h=`<div class="tth">${esc((p.title_en||'').slice(0,115))}</div>
-       <div class="tts">${esc(p.programme||p._src)} · ${esc(p._pi_country||'')} ${grant?`· <span class="ttg">${grant}</span>`:''}</div>
+       <div class="tts">${esc(p.programme||p._src)} ${pyr?`· <b style="color:#e6edf3">${pyr}</b>`:''} · ${esc(p._pi_country||'')} ${grant?`· <span class="ttg">${grant}</span>`:''}</div>
        ${coord?`<div class="tts" style="margin-top:3px">🎯 PI: <b style="color:#e3b341">${esc((coord.organisation||coord.name||'').slice(0,55))}</b></div>`:''}
        ${partners.length?`<div class="tts">🔗 Partners: ${partners.map(m=>esc((m.organisation||m.name||'').slice(0,28))).join(', ')}</div>`:''}
-       ${nlParts.length?`<div class="tts" style="color:#3fb950">🇳🇱 NL: ${nlParts.map(m=>esc((m.organisation||m.name||'').slice(0,28)+' ('+(isCoord(m.role)?'PI':'PT')+')')).join(', ')}</div>`:''}
-       ${p.project_page_url?`<div style="margin-top:4px"><a href="${p.project_page_url}" target="_blank">Open project ↗</a></div>`:''}`;
+       ${nlParts.length?`<div class="tts" style="color:#fb923c;margin-top:2px">🇳🇱 NL: ${nlParts.map(m=>esc((m.organisation||m.name||'').slice(0,28)+' ('+(isCoord(m.role)?'PI':'PT')+')')).join(', ')}</div>`:''}
+       ${kws.length?`<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px">${kws.map(k=>`<span style="background:#1a2040;color:#79c0ff;font-size:9px;padding:1px 5px;border-radius:10px;border:1px solid #2d3a6b">${esc(k)}</span>`).join('')}</div>`:''}
+       ${p.project_page_url?`<div style="margin-top:5px"><a href="${p.project_page_url}" target="_blank">Open project ↗</a></div>`:''}`;
   } else if(d.type==='country'){
     h=`<div class="tth">${esc(d.label)}</div><div class="tts">${d.count} projects as coordinator</div>`;
   } else {
@@ -870,12 +1025,6 @@ function moveTT(e){
   ttEl.style.top =Math.min(e.clientY-10,window.innerHeight-150)+'px';
 }
 function hideTT(){ ttEl.style.display='none'; }
-function clickNode(e,d){
-  if(d.type==='project'&&d.data){
-    const url=d.data.project_page_url||d.data.project_website;
-    if(url) window.open(url,'_blank');
-  }
-}
 
 // ══════════════════════════════════════════════════════════════════════════
 // CSV DOWNLOAD
@@ -982,6 +1131,39 @@ scEl.addEventListener('click',()=>{
   applyGraphHighlight();
   updateProjList(filteredProjects());
 });
+
+// ── Year range sliders ──────────────────────────────────────────────────
+(function(){
+  const fromEl  = document.getElementById('yrFrom');
+  const toEl    = document.getElementById('yrTo');
+  const fillEl  = document.getElementById('yrFill');
+  const valsEl  = document.getElementById('yrVals');
+  const MIN=2010, MAX=2027;
+
+  function updateFill(){
+    const lo=(fromEl.value-MIN)/(MAX-MIN)*100;
+    const hi=(toEl.value  -MIN)/(MAX-MIN)*100;
+    fillEl.style.left  = lo+'%';
+    fillEl.style.width = (hi-lo)+'%';
+    valsEl.textContent = `${fromEl.value} – ${toEl.value}`;
+  }
+
+  function onSlider(){
+    // Prevent handles crossing
+    if(+fromEl.value > +toEl.value) {
+      if(this===fromEl) fromEl.value=toEl.value;
+      else              toEl.value=fromEl.value;
+    }
+    yearMin=+fromEl.value;
+    yearMax=+toEl.value;
+    updateFill();
+    render();
+  }
+
+  fromEl.addEventListener('input', onSlider);
+  toEl  .addEventListener('input', onSlider);
+  updateFill();   // draw initial fill
+})();
 
 // Labels toggle
 document.getElementById('labelsToggle').addEventListener('change',e=>{
