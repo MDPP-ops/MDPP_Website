@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>EU Textile Research Network — Erasmus+ & Horizon</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<style>
+  /* ── Reset & Base ─────────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: #0d1117;
+    color: #e6edf3;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Top bar ──────────────────────────────────────────────────────────── */
+  #topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    background: #161b22;
+    border-bottom: 1px solid #30363d;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  #topbar h1 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #58a6ff;
+    white-space: nowrap;
+    letter-spacing: .02em;
+  }
+  .sep { width: 1px; height: 20px; background: #30363d; flex-shrink: 0; }
+
+  /* Source toggle */
+  .src-group {
+    display: flex;
+    gap: 4px;
+  }
+  .src-btn {
+    padding: 3px 10px;
+    font-size: 11px;
+    border-radius: 4px;
+    border: 1px solid #30363d;
+    background: #21262d;
+    color: #8b949e;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .src-btn.active {
+    background: #1f6feb;
+    border-color: #388bfd;
+    color: #fff;
+  }
+
+  /* Stat chips */
+  .stat-chip {
+    font-size: 11px;
+    color: #8b949e;
+    white-space: nowrap;
+  }
+  .stat-chip span {
+    color: #e6edf3;
+    font-weight: 600;
+  }
+  .stat-chip.highlight span { color: #3fb950; }
+  .stat-chip.funding span  { color: #d2a8ff; }
+
+  /* Search */
+  #searchBox {
+    padding: 3px 8px;
+    font-size: 11px;
+    border-radius: 5px;
+    border: 1px solid #30363d;
+    background: #0d1117;
+    color: #e6edf3;
+    width: 160px;
+  }
+  #searchBox::placeholder { color: #484f58; }
+
+  /* ── Main layout ──────────────────────────────────────────────────────── */
+  #main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Keyword sidebar ──────────────────────────────────────────────────── */
+  #sidebar {
+    width: 230px;
+    flex-shrink: 0;
+    background: #161b22;
+    border-right: 1px solid #30363d;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #sidebar-header {
+    padding: 8px 10px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    border-bottom: 1px solid #30363d;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .kw-actions { display: flex; gap: 4px; }
+  .kw-action-btn {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid #30363d;
+    background: #21262d;
+    color: #8b949e;
+    cursor: pointer;
+  }
+  .kw-action-btn:hover { color: #e6edf3; }
+
+  #kw-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 0;
+  }
+  #kw-list::-webkit-scrollbar { width: 4px; }
+  #kw-list::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
+
+  .kw-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin: 1px 4px;
+    transition: background .1s;
+  }
+  .kw-item:hover { background: #21262d; }
+  .kw-item input[type=checkbox] {
+    accent-color: #1f6feb;
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+  }
+  .kw-label {
+    font-size: 12px;
+    flex: 1;
+    color: #e6edf3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .kw-count {
+    font-size: 10px;
+    color: #58a6ff;
+    background: #0d2040;
+    border-radius: 8px;
+    padding: 1px 5px;
+    min-width: 22px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .kw-remove {
+    font-size: 11px;
+    color: #484f58;
+    cursor: pointer;
+    padding: 0 2px;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .kw-remove:hover { color: #f85149; }
+
+  #kw-add {
+    padding: 6px 8px;
+    border-top: 1px solid #30363d;
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  #newKwInput {
+    flex: 1;
+    font-size: 11px;
+    padding: 4px 7px;
+    border-radius: 4px;
+    border: 1px solid #30363d;
+    background: #0d1117;
+    color: #e6edf3;
+  }
+  #newKwInput::placeholder { color: #484f58; }
+  #addKwBtn {
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #30363d;
+    background: #21262d;
+    color: #8b949e;
+    cursor: pointer;
+  }
+  #addKwBtn:hover { color: #e6edf3; }
+
+  /* ── Canvas ───────────────────────────────────────────────────────────── */
+  #canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+  #graph-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* ── Project panel ────────────────────────────────────────────────────── */
+  #proj-panel {
+    width: 280px;
+    flex-shrink: 0;
+    background: #161b22;
+    border-left: 1px solid #30363d;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #proj-header {
+    padding: 8px 10px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    border-bottom: 1px solid #30363d;
+    flex-shrink: 0;
+  }
+  #proj-header span { color: #58a6ff; font-weight: 700; }
+
+  #proj-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 0;
+  }
+  #proj-list::-webkit-scrollbar { width: 4px; }
+  #proj-list::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
+
+  .proj-item {
+    padding: 5px 10px;
+    font-size: 11px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin: 1px 4px;
+    line-height: 1.4;
+    transition: background .1s;
+  }
+  .proj-item:hover { background: #21262d; }
+  .proj-item .proj-title {
+    color: #e6edf3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .proj-item .proj-meta {
+    color: #8b949e;
+    font-size: 10px;
+    margin-top: 2px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .prog-badge {
+    font-size: 9px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+  .prog-badge.erasmus { background: #1a3a1a; color: #3fb950; }
+  .prog-badge.horizon { background: #0d1f3c; color: #58a6ff; }
+  .prog-badge.h2020   { background: #1a2540; color: #79c0ff; }
+
+  #proj-panel-footer {
+    padding: 6px 10px;
+    border-top: 1px solid #30363d;
+    flex-shrink: 0;
+  }
+  #downloadBtn {
+    width: 100%;
+    font-size: 11px;
+    padding: 5px 8px;
+    border-radius: 4px;
+    border: 1px solid #30363d;
+    background: #21262d;
+    color: #8b949e;
+    cursor: pointer;
+    text-align: center;
+  }
+  #downloadBtn:hover { color: #e6edf3; border-color: #58a6ff; }
+
+  /* ── D3 graph nodes/edges ─────────────────────────────────────────────── */
+  .link { stroke: #30363d; stroke-width: 1; opacity: 0.5; }
+  .node-proj {
+    fill: #1f6feb;
+    stroke: #388bfd;
+    stroke-width: 1.5;
+    cursor: pointer;
+  }
+  .node-proj.erasmus-node { fill: #238636; stroke: #3fb950; }
+  .node-proj.both-node    { fill: #6e40c9; stroke: #a371f7; }
+  .node-org  { fill: #6e40c9; stroke: #a371f7; stroke-width: 1; cursor: pointer; }
+  .node-country { fill: #e3b341; stroke: #d29922; stroke-width: 1; cursor: pointer; }
+
+  /* Tooltip */
+  #tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: #1c2128;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 11px;
+    max-width: 280px;
+    line-height: 1.5;
+    z-index: 100;
+    display: none;
+  }
+  #tooltip .tt-title { font-weight: 600; color: #e6edf3; margin-bottom: 4px; }
+  #tooltip .tt-meta  { color: #8b949e; }
+  #tooltip .tt-grant { color: #d2a8ff; font-weight: 600; }
+  #tooltip .tt-link  { color: #58a6ff; text-decoration: none; font-size: 10px; }
+
+  /* Loading overlay */
+  #loading {
+    position: fixed;
+    inset: 0;
+    background: #0d1117;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    gap: 14px;
+  }
+  #loading h2 { font-size: 15px; color: #8b949e; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid #21262d;
+    border-top-color: #1f6feb;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #load-status { font-size: 12px; color: #484f58; }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div id="topbar">
+  <h1>🧵 EU Textile Research Network</h1>
+  <div class="sep"></div>
+
+  <!-- Source toggle -->
+  <div class="src-group">
+    <button class="src-btn active" data-src="both">All</button>
+    <button class="src-btn" data-src="erasmus">Erasmus+</button>
+    <button class="src-btn" data-src="cordis">CORDIS</button>
+  </div>
+  <div class="sep"></div>
+
+  <!-- Stats -->
+  <div class="stat-chip">Total DB: <span id="stat-total">—</span></div>
+  <div class="stat-chip highlight">Matched: <span id="stat-matched">—</span> (<span id="stat-pct">—</span>)</div>
+  <div class="stat-chip funding">Funding: <span id="stat-funding">—</span></div>
+  <div class="sep"></div>
+
+  <!-- Graph mode -->
+  <div class="src-group">
+    <button class="src-btn active" data-mode="country" id="modeBtn-country">Country</button>
+    <button class="src-btn" data-mode="org" id="modeBtn-org">Org</button>
+    <button class="src-btn" data-mode="proj" id="modeBtn-proj">Project</button>
+  </div>
+  <div class="sep"></div>
+
+  <input id="searchBox" type="search" placeholder="Search projects…">
+</div>
+
+<!-- Main layout -->
+<div id="main">
+
+  <!-- Keyword sidebar -->
+  <div id="sidebar">
+    <div id="sidebar-header">
+      Keywords
+      <div class="kw-actions">
+        <button class="kw-action-btn" id="btnAll">all</button>
+        <button class="kw-action-btn" id="btnNone">none</button>
+      </div>
+    </div>
+    <div id="kw-list"></div>
+    <div id="kw-add">
+      <input id="newKwInput" type="text" placeholder="Add keyword…">
+      <button id="addKwBtn">+</button>
+    </div>
+  </div>
+
+  <!-- Canvas -->
+  <div id="canvas-wrap">
+    <svg id="graph-svg"></svg>
+  </div>
+
+  <!-- Project panel -->
+  <div id="proj-panel">
+    <div id="proj-header">Projects &nbsp;<span id="proj-count">0</span></div>
+    <div id="proj-list"></div>
+    <div id="proj-panel-footer">
+      <button id="downloadBtn">⬇ Download CSV</button>
+    </div>
+  </div>
+</div>
+
+<div id="tooltip"></div>
+<div id="loading">
+  <div class="spinner"></div>
+  <h2>Loading EU project data…</h2>
+  <div id="load-status"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════════════════════
+const DATA_FILES = [
+  { file: 'erasmus_textile_projects.json', src: 'erasmus' },
+  { file: 'cordis_textile_projects.json',  src: 'cordis'  },
+];
+
+const DEFAULT_KEYWORDS = new Set([
+  'textile','textiel','fashion','garment',
+  'wool','wol','cotton','katoen',
+  'fiber','fibre','vezel','weven','kleding',
+  'zijde','polyester','denim','leather','fabric','dye',
+  'recycled textile','circular textile','circular fashion',
+  'circulair textiel','textiel recycling','smart textile',
+  'duurzame mode','lifecycle','value chain',
+  'hergebruik','biobased','wearable',
+  'supply chain','waardeketen','levenscyclus',
+  'biomaterial','coating','hemp','hennep',
+]);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════════════
+let allProjects = [];   // full merged dataset
+let metaTotals  = { erasmus: 0, cordis: 0 };
+let activeKw    = new Set(DEFAULT_KEYWORDS);
+let activeSrc   = 'both';   // 'both' | 'erasmus' | 'cordis'
+let activeMode  = 'country'; // 'country' | 'org' | 'proj'
+let searchTerm  = '';
+let simulation  = null;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DATA LOADING
+// ═══════════════════════════════════════════════════════════════════════════
+async function loadData() {
+  const setStatus = s => document.getElementById('load-status').textContent = s;
+
+  for (const { file, src } of DATA_FILES) {
+    setStatus(`Loading ${file}…`);
+    try {
+      const resp = await fetch(file);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+
+      const meta     = data.meta     || {};
+      const projects = data.projects || (Array.isArray(data) ? data : []);
+
+      if (src === 'erasmus') {
+        metaTotals.erasmus = meta.total_erasmus || 4684372;
+      } else if (src === 'cordis') {
+        metaTotals.cordis = meta.total_cordis || 55095;
+      }
+
+      projects.forEach(p => {
+        p._src = src;
+        // Parse ec_grant_num if missing
+        if (p.ec_grant_num === undefined) {
+          const raw = String(p.ec_grant || '0').replace(/\s/g,'').replace(',','.');
+          p.ec_grant_num = parseFloat(raw) || 0;
+        }
+      });
+
+      allProjects.push(...projects);
+    } catch (e) {
+      console.warn(`Failed to load ${file}:`, e);
+    }
+  }
+
+  setStatus('Initialising visualisation…');
+  document.getElementById('loading').style.display = 'none';
+  init();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FILTERING
+// ═══════════════════════════════════════════════════════════════════════════
+function filteredProjects() {
+  return allProjects.filter(p => {
+    // Source filter
+    if (activeSrc !== 'both' && p._src !== activeSrc) return false;
+    // Keyword filter — empty activeKw = show all
+    if (activeKw.size > 0) {
+      const terms = p._matched_terms || [];
+      if (!terms.some(t => activeKw.has(t))) return false;
+    }
+    // Search filter
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      if (!(p.title_en || '').toLowerCase().includes(q) &&
+          !(p._pi_institution || '').toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// KEYWORD MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════════════
+function buildKwCounts() {
+  // Counts based on source filter only (not keyword filter)
+  const sourcePools = allProjects.filter(p =>
+    activeSrc === 'both' || p._src === activeSrc
+  );
+  const counts = new Map();
+  for (const p of sourcePools) {
+    for (const kw of (p._matched_terms || [])) {
+      counts.set(kw, (counts.get(kw) || 0) + 1);
+    }
+  }
+  return counts;
+}
+
+function allKeywords() {
+  // Union of all matched keywords across allProjects
+  const s = new Set();
+  allProjects.forEach(p => (p._matched_terms||[]).forEach(k => s.add(k)));
+  DEFAULT_KEYWORDS.forEach(k => s.add(k));
+  return s;
+}
+
+function renderKeywords() {
+  const counts = buildKwCounts();
+  const keywords = [...allKeywords()].sort((a,b) =>
+    (counts.get(b)||0) - (counts.get(a)||0)
+  );
+
+  const list = document.getElementById('kw-list');
+  list.innerHTML = '';
+
+  for (const kw of keywords) {
+    const cnt = counts.get(kw) || 0;
+    const checked = activeKw.has(kw);
+
+    const item = document.createElement('div');
+    item.className = 'kw-item';
+    item.innerHTML = `
+      <input type="checkbox" ${checked ? 'checked' : ''} data-kw="${kw}">
+      <span class="kw-label" title="${kw}">${kw}</span>
+      <span class="kw-count">${cnt}</span>
+      <span class="kw-remove" data-kw="${kw}" title="Remove">×</span>
+    `;
+    list.appendChild(item);
+  }
+
+  list.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', e => {
+      const kw = e.target.dataset.kw;
+      e.target.checked ? activeKw.add(kw) : activeKw.delete(kw);
+      render();
+    });
+  });
+  list.querySelectorAll('.kw-remove').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const kw = e.target.dataset.kw;
+      activeKw.delete(kw);
+      // remove from all projects' matched terms too so it disappears
+      DEFAULT_KEYWORDS.delete(kw);
+      allProjects.forEach(p => {
+        if (p._matched_terms) {
+          p._matched_terms = p._matched_terms.filter(t => t !== kw);
+        }
+      });
+      renderKeywords();
+      render();
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STATS
+// ═══════════════════════════════════════════════════════════════════════════
+function updateStats(projects) {
+  const totalDB = (activeSrc === 'erasmus') ? metaTotals.erasmus
+                : (activeSrc === 'cordis')  ? metaTotals.cordis
+                : (metaTotals.erasmus + metaTotals.cordis);
+
+  const matched = projects.length;
+  const pct = totalDB > 0 ? (matched / totalDB * 100).toFixed(2) : '—';
+  const funding = projects.reduce((s, p) => s + (p.ec_grant_num || 0), 0);
+
+  document.getElementById('stat-total').textContent   = totalDB.toLocaleString();
+  document.getElementById('stat-matched').textContent = matched.toLocaleString();
+  document.getElementById('stat-pct').textContent     = `${pct}%`;
+  document.getElementById('stat-funding').textContent = formatEuro(funding);
+}
+
+function formatEuro(v) {
+  if (v >= 1e9) return `€${(v/1e9).toFixed(2)}B`;
+  if (v >= 1e6) return `€${(v/1e6).toFixed(1)}M`;
+  if (v >= 1e3) return `€${(v/1e3).toFixed(0)}K`;
+  return `€${v.toFixed(0)}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PROJECT LIST PANEL
+// ═══════════════════════════════════════════════════════════════════════════
+function updateProjectList(projects) {
+  document.getElementById('proj-count').textContent = projects.length.toLocaleString();
+  const list = document.getElementById('proj-list');
+  list.innerHTML = '';
+
+  const sorted = [...projects].sort((a,b) =>
+    (a.title_en||'').localeCompare(b.title_en||'')
+  );
+  const MAX = 500;
+  const shown = sorted.slice(0, MAX);
+
+  for (const p of shown) {
+    const div = document.createElement('div');
+    div.className = 'proj-item';
+
+    const prog = p.programme || p._src;
+    const badgeCls = p._src === 'erasmus' ? 'erasmus'
+                   : prog.includes('2020') ? 'h2020'
+                   : 'horizon';
+    const badgeTxt = p._src === 'erasmus' ? 'E+' : prog.includes('2020') ? 'H2020' : 'HE';
+    const grant = p.ec_grant_num ? formatEuro(p.ec_grant_num) : '';
+
+    div.innerHTML = `
+      <div class="proj-title">${escHtml(p.title_en || '(no title)')}</div>
+      <div class="proj-meta">
+        <span class="prog-badge ${badgeCls}">${badgeTxt}</span>
+        ${p._pi_country ? `<span>${p._pi_country}</span>` : ''}
+        ${grant ? `<span style="color:#d2a8ff">${grant}</span>` : ''}
+      </div>
+    `;
+    div.addEventListener('click', () => {
+      const url = p.project_page_url || p.project_website;
+      if (url) window.open(url, '_blank');
+    });
+    list.appendChild(div);
+  }
+  if (sorted.length > MAX) {
+    const note = document.createElement('div');
+    note.style.cssText = 'padding:6px 10px;font-size:10px;color:#484f58;text-align:center';
+    note.textContent = `+ ${(sorted.length - MAX).toLocaleString()} more (refine with keywords)`;
+    list.appendChild(note);
+  }
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CSV DOWNLOAD
+// ═══════════════════════════════════════════════════════════════════════════
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  const projects = filteredProjects();
+  const cols = ['project_id','title_en','programme','funding_scheme',
+                'start_date','end_date','_pi_institution','_pi_country',
+                'ec_grant','status','project_page_url','_matched_terms'];
+  const rows = [cols.join(',')];
+  for (const p of projects) {
+    rows.push(cols.map(c => {
+      const v = c === '_matched_terms'
+        ? (p[c]||[]).join('|')
+        : String(p[c]||'').replace(/"/g,'""');
+      return `"${v}"`;
+    }).join(','));
+  }
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `eu_textile_projects_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// D3 GRAPH
+// ═══════════════════════════════════════════════════════════════════════════
+const svg = d3.select('#graph-svg');
+const g   = svg.append('g');
+
+const zoom = d3.zoom()
+  .scaleExtent([0.05, 8])
+  .on('zoom', e => g.attr('transform', e.transform));
+svg.call(zoom);
+
+function getSize() {
+  const el = document.getElementById('canvas-wrap');
+  return { W: el.clientWidth, H: el.clientHeight };
+}
+
+function fitView(nodes) {
+  if (!nodes.length) return;
+  const { W, H } = getSize();
+  const xs = nodes.map(n => n.x), ys = nodes.map(n => n.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const extW = maxX - minX || 1, extH = maxY - minY || 1;
+  const scale = Math.min(0.9 * W / extW, 0.9 * H / extH, 4);
+  const tx = W/2 - scale*(minX + extW/2);
+  const ty = H/2 - scale*(minY + extH/2);
+  svg.transition().duration(600)
+    .call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+}
+
+function buildGraph(projects) {
+  const { W, H } = getSize();
+  const MAX_PROJ = 800;    // cap for performance
+  const MAX_HUBS = 60;
+
+  // Determine hub type
+  const hubKey = activeMode === 'org'     ? '_pi_institution'
+               : activeMode === 'country' ? '_pi_country'
+               : null; // 'proj' mode — no hubs
+
+  if (!hubKey) {
+    // Pure project nodes, no org/country hubs
+    const capped = projects.slice(0, MAX_PROJ);
+    const nodes = capped.map(p => ({
+      id:   p.project_id || p.title_en,
+      type: 'project',
+      data: p,
+    }));
+    return { nodes, links: [] };
+  }
+
+  // Hub mode
+  const hubCount = new Map();
+  projects.forEach(p => {
+    const h = (p[hubKey]||'').trim();
+    if (h) hubCount.set(h, (hubCount.get(h)||0) + 1);
+  });
+
+  // Top hubs
+  const topHubs = [...hubCount.entries()]
+    .sort((a,b) => b[1]-a[1])
+    .slice(0, MAX_HUBS)
+    .map(([h]) => h);
+  const hubSet = new Set(topHubs);
+
+  const nodes = [];
+  const links = [];
+  const nodeMap = new Map();
+
+  // Hub nodes
+  topHubs.forEach(h => {
+    const node = {
+      id: `hub:${h}`,
+      type: activeMode === 'country' ? 'country' : 'org',
+      label: h,
+      count: hubCount.get(h),
+    };
+    nodes.push(node);
+    nodeMap.set(`hub:${h}`, node);
+  });
+
+  // Project nodes (capped)
+  const projsFiltered = projects.filter(p => {
+    const h = (p[hubKey]||'').trim();
+    return hubSet.has(h);
+  }).slice(0, MAX_PROJ);
+
+  projsFiltered.forEach(p => {
+    const nid = `proj:${p.project_id||p.title_en}`;
+    if (!nodeMap.has(nid)) {
+      const node = {
+        id: nid,
+        type: 'project',
+        src:  p._src,
+        data: p,
+      };
+      nodes.push(node);
+      nodeMap.set(nid, node);
+    }
+    const h = (p[hubKey]||'').trim();
+    if (h && hubSet.has(h)) {
+      links.push({ source: nid, target: `hub:${h}` });
+    }
+  });
+
+  return { nodes, links };
+}
+
+function render() {
+  const projects = filteredProjects();
+  updateStats(projects);
+  updateProjectList(projects);
+  renderKeywords();
+
+  if (simulation) simulation.stop();
+  g.selectAll('*').remove();
+
+  if (!projects.length) return;
+
+  const { nodes, links } = buildGraph(projects);
+  if (!nodes.length) return;
+
+  const { W, H } = getSize();
+
+  // Links
+  const link = g.append('g')
+    .selectAll('line')
+    .data(links)
+    .enter().append('line')
+    .attr('class', 'link');
+
+  // Nodes
+  const node = g.append('g')
+    .selectAll('circle')
+    .data(nodes)
+    .enter().append('circle')
+    .attr('r', d => {
+      if (d.type === 'country') return Math.min(6 + Math.sqrt(d.count||1)*1.5, 22);
+      if (d.type === 'org')     return Math.min(5 + Math.sqrt(d.count||1)*1.2, 16);
+      return 5;
+    })
+    .attr('class', d => {
+      if (d.type === 'project') {
+        return `node-proj${d.src === 'erasmus' ? ' erasmus-node' : ''}`;
+      }
+      return d.type === 'country' ? 'node-country' : 'node-org';
+    })
+    .call(d3.drag()
+      .on('start', (e, d) => { if (!e.active) simulation.alphaTarget(0.2).restart(); d.fx=d.x; d.fy=d.y; })
+      .on('drag',  (e, d) => { d.fx=e.x; d.fy=e.y; })
+      .on('end',   (e, d) => { if (!e.active) simulation.alphaTarget(0); d.fx=null; d.fy=null; })
+    )
+    .on('mouseover', showTooltip)
+    .on('mousemove', moveTooltip)
+    .on('mouseout',  hideTooltip)
+    .on('click',     clickNode);
+
+  // Labels for hub nodes
+  const labels = g.append('g')
+    .selectAll('text')
+    .data(nodes.filter(d => d.type !== 'project'))
+    .enter().append('text')
+    .text(d => d.label || d.id)
+    .attr('font-size', d => d.type === 'country' ? 11 : 9)
+    .attr('fill', d => d.type === 'country' ? '#e3b341' : '#a371f7')
+    .attr('text-anchor', 'middle')
+    .attr('dy', d => -(Math.min(6 + Math.sqrt(d.count||1)*1.5, 22) + 3))
+    .style('pointer-events', 'none');
+
+  simulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d => d.id)
+      .distance(d => d.source.type === 'project' ? 55 : 40)
+      .strength(0.35))
+    .force('charge', d3.forceManyBody()
+      .strength(d => d.type === 'project' ? -80 : -35)
+      .distanceMax(300))
+    .force('collide', d3.forceCollide(d => d.type === 'project' ? 10 : 6))
+    .force('center', d3.forceCenter(W/2, H/2).strength(0.06))
+    .force('x', d3.forceX(W/2).strength(0.04))
+    .force('y', d3.forceY(H/2).strength(0.04))
+    .alphaDecay(0.022)
+    .on('tick', () => {
+      link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+          .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+      node.attr('cx', d => d.x).attr('cy', d => d.y);
+      labels.attr('x', d => d.x).attr('y', d => d.y);
+    })
+    .on('end', () => fitView(nodes));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TOOLTIP
+// ═══════════════════════════════════════════════════════════════════════════
+const tt = document.getElementById('tooltip');
+
+function showTooltip(e, d) {
+  let html = '';
+  if (d.type === 'project') {
+    const p = d.data;
+    const grant = p.ec_grant_num ? formatEuro(p.ec_grant_num) : null;
+    html = `
+      <div class="tt-title">${escHtml((p.title_en||'').slice(0,120))}</div>
+      <div class="tt-meta">${p.programme||p._src} · ${p._pi_country||''}
+        ${p._pi_institution ? '· '+escHtml(p._pi_institution.slice(0,50)) : ''}</div>
+      ${grant ? `<div class="tt-grant">${grant}</div>` : ''}
+      ${(p._matched_terms||[]).length ? `<div class="tt-meta" style="margin-top:3px">🏷 ${p._matched_terms.join(', ')}</div>` : ''}
+      ${p.project_page_url ? `<div style="margin-top:4px"><a class="tt-link" href="${p.project_page_url}" target="_blank">Open project ↗</a></div>` : ''}
+    `;
+  } else {
+    html = `<div class="tt-title">${escHtml(d.label||d.id)}</div>
+            <div class="tt-meta">${d.count||0} projects</div>`;
+  }
+  tt.innerHTML = html;
+  tt.style.display = 'block';
+  moveTooltip(e);
+}
+
+function moveTooltip(e) {
+  const x = e.clientX + 14, y = e.clientY - 10;
+  tt.style.left = Math.min(x, window.innerWidth  - 300) + 'px';
+  tt.style.top  = Math.min(y, window.innerHeight - 120) + 'px';
+}
+
+function hideTooltip() { tt.style.display = 'none'; }
+
+function clickNode(e, d) {
+  if (d.type === 'project' && d.data) {
+    const url = d.data.project_page_url || d.data.project_website;
+    if (url) window.open(url, '_blank');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EVENT WIRING
+// ═══════════════════════════════════════════════════════════════════════════
+document.querySelectorAll('.src-btn[data-src]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.src-btn[data-src]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeSrc = btn.dataset.src;
+    renderKeywords();
+    render();
+  });
+});
+
+document.querySelectorAll('.src-btn[data-mode]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.src-btn[data-mode]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeMode = btn.dataset.mode;
+    render();
+  });
+});
+
+document.getElementById('btnAll').addEventListener('click', () => {
+  allKeywords().forEach(k => activeKw.add(k));
+  renderKeywords();
+  render();
+});
+
+document.getElementById('btnNone').addEventListener('click', () => {
+  activeKw.clear();
+  renderKeywords();
+  render();
+});
+
+const newKwInput = document.getElementById('newKwInput');
+document.getElementById('addKwBtn').addEventListener('click', () => {
+  const kw = newKwInput.value.trim().toLowerCase();
+  if (!kw) return;
+  newKwInput.value = '';
+  activeKw.add(kw);
+  DEFAULT_KEYWORDS.add(kw);
+  // Annotate projects (client-side augmentation)
+  allProjects.forEach(p => {
+    const text = ((p.title_en||'') + ' ' + (p.objective||'')).toLowerCase();
+    if (text.includes(kw) && !(p._matched_terms||[]).includes(kw)) {
+      p._matched_terms = [...(p._matched_terms||[]), kw];
+    }
+  });
+  renderKeywords();
+  render();
+});
+newKwInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('addKwBtn').click();
+});
+
+let searchTimer;
+document.getElementById('searchBox').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    searchTerm = e.target.value.trim();
+    render();
+  }, 300);
+});
+
+window.addEventListener('resize', () => {
+  if (simulation) fitView(simulation.nodes());
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════════════
+function init() {
+  renderKeywords();
+  render();
+}
+
+loadData();
+</script>
+</body>
+</html>
