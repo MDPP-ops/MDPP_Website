@@ -247,10 +247,10 @@ svg#graph-svg{cursor:default}
     <span class="yr-label">Years</span>
     <div class="yr-track">
       <div class="yr-fill" id="yrFill"></div>
-      <input type="range" id="yrFrom" min="2010" max="2027" value="2016" step="1">
+      <input type="range" id="yrFrom" min="2010" max="2027" value="2014" step="1">
       <input type="range" id="yrTo"   min="2010" max="2027" value="2026" step="1">
     </div>
-    <span class="yr-vals" id="yrVals">2016 – 2026</span>
+    <span class="yr-vals" id="yrVals">2014 – 2026</span>
   </div>
   <div class="vsep"></div>
 
@@ -389,7 +389,7 @@ let orgFilter    = '';
 let showLabels   = false;           // labels off by default
 let pinnedNode   = null;            // datum of the currently pinned (clicked) node
 let neighborMap  = new Map();       // nodeId → Set<neighborId> (rebuilt each render)
-let yearMin      = 2016;            // inclusive lower bound
+let yearMin      = 2014;            // inclusive lower bound — captures all H2020
 let yearMax      = 2026;            // inclusive upper bound
 
 // ══════════════════════════════════════════════════════════════════════════
