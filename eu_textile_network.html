@@ -423,6 +423,27 @@ function isCoord(role) {
   return COORD_ROLES.has((role||'').toLowerCase().replace(/[_-]/g,' ').trim());
 }
 
+function computeDisplayName(p) {
+  // CORDIS: always has a short project acronym — use it as primary identifier
+  if (p._src === 'cordis') {
+    const acr = (p.acronym || '').trim();
+    if (acr) return acr;
+  }
+  // Erasmus: many titles embed an acronym as "ACRONYM - Description"
+  const title = (p.title_en || '').trim();
+  const dashIdx = title.indexOf(' - ');
+  if (dashIdx > 0 && dashIdx <= 22) {
+    const prefix = title.slice(0, dashIdx).trim();
+    // Accept as acronym-like if short and mostly uppercase/digits
+    if (prefix.length >= 2 && /^[A-Z0-9][A-Z0-9\s\-\.]{0,21}$/i.test(prefix)
+        && (prefix === prefix.toUpperCase() || prefix.replace(/\s/g,'').length <= 12)) {
+      return prefix;
+    }
+  }
+  // Fallback: truncate the full title
+  return title.slice(0, 55) || '(no title)';
+}
+
 function projectYear(p) {
   // Erasmus uses call_year; CORDIS uses start_date (YYYY-MM-DD)
   if (p._src === 'erasmus') {
@@ -463,6 +484,7 @@ async function loadData() {
         }
         p._progKey=progKey(p);
         p._isNL=isNL(p);
+        p._display_name=computeDisplayName(p);
         // Re-annotate _matched_terms from live keyword list
         // (overrides pre-computed JSON values so keyword edits take effect immediately)
         const hay=((p.title_en||'')+' '+(p.objective||'')+' '+(p.topics||'')).toLowerCase();
@@ -674,8 +696,11 @@ function updateProjList(projects) {
       isCoord(m.role)?nlPIs.push(nm):nlPTs.push(nm);
     }
 
+    const dn=p._display_name||p.title_en||'';
+    const subtitle=(dn!==p.title_en&&p.title_en)?p.title_en.slice(0,90):'';
     div.innerHTML=`
-      <div class="proj-title">${esc((p.title_en||'').slice(0,120))}</div>
+      <div class="proj-title">${esc(dn)}</div>
+      ${subtitle?`<div style="font-size:10px;color:#8b949e;line-height:1.3;margin-top:1px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden">${esc(subtitle)}</div>`:''}
       <div class="proj-meta">
         <span class="prog-badge ${bc}">${bl}</span>
         ${yr?`<span style="color:#484f58">${yr}</span>`:''}
@@ -705,6 +730,7 @@ function applySearch(projects) {
   const q=searchTerm.toLowerCase();
   highlightSet=new Set(
     projects.filter(p=>
+      (p._display_name||'').toLowerCase().includes(q)||
       (p.title_en||'').toLowerCase().includes(q)||
       (p._pi_institution||'').toLowerCase().includes(q)||
       (p.objective||'').toLowerCase().includes(q)
@@ -1023,7 +1049,10 @@ function showTT(e,d){
     const grant=p.ec_grant_num?fmtEuro(p.ec_grant_num):'';
     const kws=(p._matched_terms||[]).filter(k=>activeKw.has(k));
     const pyr=projectYear(p);
-    h=`<div class="tth">${esc((p.title_en||'').slice(0,115))}</div>
+    const dn=p._display_name||p.title_en||'';
+    const fullTitle=(dn!==p.title_en&&p.title_en)?p.title_en.slice(0,110):'';
+    h=`<div class="tth">${esc(dn)}</div>
+       ${fullTitle?`<div class="tts" style="font-style:italic;margin-bottom:2px">${esc(fullTitle)}</div>`:''}
        <div class="tts">${esc(p.programme||p._src)} ${pyr?`· <b style="color:#e6edf3">${pyr}</b>`:''} · ${esc(p._pi_country||'')} ${grant?`· <span class="ttg">${grant}</span>`:''}</div>
        ${coord?`<div class="tts" style="margin-top:3px">🎯 PI: <b style="color:#e3b341">${esc((coord.organisation||coord.name||'').slice(0,55))}</b></div>`:''}
        ${partners.length?`<div class="tts">🔗 Partners: ${partners.map(m=>esc((m.organisation||m.name||'').slice(0,28))).join(', ')}</div>`:''}
