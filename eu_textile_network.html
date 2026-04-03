@@ -138,18 +138,21 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0d1117;c
 .link-partner{stroke:#3a4060;stroke-width:1;opacity:0.45}
 .link-country{stroke:#484f58;stroke-width:1;opacity:0.35}
 
-.node-erasmus{fill:#238636;stroke:#3fb950;stroke-width:1.5}
-.node-he     {fill:#1f6feb;stroke:#388bfd;stroke-width:1.5}
-.node-h2020  {fill:#0969da;stroke:#1f6feb;stroke-width:1.5}
-.node-org-pi {fill:#c49400;stroke:#e3b341;stroke-width:1.2}
-.node-org-pt {fill:#6e40c9;stroke:#a371f7;stroke-width:1}
-.node-country{fill:#1a4a7a;stroke:#58a6ff;stroke-width:1.2}
+/* All project nodes → magenta (programme shown via badge/toggle, not colour) */
+.node-erasmus,.node-he,.node-h2020{fill:#b5179e;stroke:#f72585;stroke-width:1.5}
+/* NL organisations → orange */
+.node-org-nl   {fill:#c2410c;stroke:#fb923c;stroke-width:1.5}
+/* Non-NL organisations → blue */
+.node-org-other{fill:#1d4ed8;stroke:#60a5fa;stroke-width:1}
+/* Country hubs → cyan (distinct from org-blue) */
+.node-country  {fill:#0e7490;stroke:#22d3ee;stroke-width:1.2}
 
 .node-proj{cursor:pointer}
 .node-org {cursor:pointer}
 .node-proj.dimmed,.node-org.dimmed,.link.dimmed{opacity:0.08}
 .node-proj.lit{stroke-width:3!important;filter:drop-shadow(0 0 6px #3fb950)}
-.node-org.org-glow{stroke-width:2.5!important;filter:drop-shadow(0 0 5px #e3b341)}
+.node-org-nl.org-glow   {stroke-width:3!important;filter:drop-shadow(0 0 7px #fb923c)}
+.node-org-other.org-glow{stroke-width:3!important;filter:drop-shadow(0 0 7px #60a5fa)}
 .link.link-hi{opacity:0.9!important;stroke-width:2.5!important}
 
 /* ── Tooltip ─────────────────────────────────────────────────────────── */
@@ -204,6 +207,11 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0d1117;c
   <div class="stat s-fund">Funding: <b id="s-fund">—</b></div>
   <div class="vsep"></div>
 
+  <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#8b949e;cursor:pointer;white-space:nowrap;user-select:none">
+    <input type="checkbox" id="labelsToggle" style="accent-color:#58a6ff;width:12px;height:12px">
+    Labels
+  </label>
+  <div class="vsep"></div>
   <input id="searchBox" type="search" placeholder="Search… (Enter to lock)">
   <button id="searchClear" title="Clear search">✕</button>
 </div>
@@ -215,13 +223,12 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0d1117;c
   <div id="sidebar">
     <div id="legend">
       <div class="leg-title">Legend</div>
-      <div class="lr"><div class="ldot" style="background:#238636;border:1.5px solid #3fb950"></div><div class="ll">Erasmus+ project</div></div>
-      <div class="lr"><div class="ldot" style="background:#1f6feb;border:1.5px solid #388bfd"></div><div class="ll">Horizon Europe project</div></div>
-      <div class="lr"><div class="ldot" style="background:#0969da;border:1.5px solid #1f6feb"></div><div class="ll">Horizon 2020 project</div></div>
-      <div class="lr"><div class="ldot" style="background:#c49400;border:1.2px solid #e3b341"></div><div class="ll">Coordinator (PI) — <span style="color:#e3b341">amber</span></div></div>
-      <div class="lr"><div class="ldot" style="background:#6e40c9;border:1px solid #a371f7"></div><div class="ll">Partner organisation</div></div>
-      <div class="lr"><div class="ldot" style="background:#1a4a7a;border:1.2px solid #58a6ff"></div><div class="ll">Country hub</div></div>
-      <div class="lr" style="margin-top:5px"><div class="lline" style="background:#e3b341"></div><div class="ll">PI link (coordinator)</div></div>
+      <div class="lr"><div class="ldot" style="background:#b5179e;border:1.5px solid #f72585"></div><div class="ll">Project (all programmes)</div></div>
+      <div class="lr" style="margin-left:10px;margin-bottom:0"><span style="font-size:9px;color:#484f58">E+ / HE / H2020 — toggle above</span></div>
+      <div class="lr" style="margin-top:5px"><div class="ldot" style="background:#c2410c;border:1.5px solid #fb923c"></div><div class="ll" style="color:#fb923c">🇳🇱 NL organisation</div></div>
+      <div class="lr"><div class="ldot" style="background:#1d4ed8;border:1px solid #60a5fa"></div><div class="ll">Non-NL organisation</div></div>
+      <div class="lr"><div class="ldot" style="background:#0e7490;border:1.2px solid #22d3ee"></div><div class="ll">Country hub</div></div>
+      <div class="lr" style="margin-top:5px"><div class="lline" style="background:#e3b341"></div><div class="ll">PI / coordinator link</div></div>
       <div class="lr"><div class="lline" style="background:#3a4060"></div><div class="ll">Partner link</div></div>
     </div>
     <div id="kw-section">
@@ -299,9 +306,9 @@ const DEFAULT_KEYWORDS = [
   'zijde','polyester','denim','leather','fabric','dye',
   'recycled textile','circular textile','circular fashion',
   'circulair textiel','textiel recycling','smart textile',
-  'duurzame mode','lifecycle','value chain',
+  'duurzame mode','lifecycle','textile value chain',
   'hergebruik','biobased','wearable',
-  'supply chain','waardeketen','levenscyclus',
+  'textile supply chain','waardeketen','levenscyclus',
   'biomaterial','coating','hemp','hennep',
 ];
 
@@ -327,6 +334,7 @@ let selectedOrg  = null;            // name of selected NL org
 let simulation   = null;
 let activePanel  = 'proj';          // 'proj' | 'orgs'
 let orgFilter    = '';
+let showLabels   = false;           // labels off by default
 
 // ══════════════════════════════════════════════════════════════════════════
 // HELPERS
@@ -385,6 +393,10 @@ async function loadData() {
         }
         p._progKey=progKey(p);
         p._isNL=isNL(p);
+        // Re-annotate _matched_terms from live keyword list
+        // (overrides pre-computed JSON values so keyword edits take effect immediately)
+        const hay=((p.title_en||'')+' '+(p.objective||'')+' '+(p.topics||'')).toLowerCase();
+        p._matched_terms=DEFAULT_KEYWORDS.filter(k=>hay.includes(k.toLowerCase()));
       });
       allProjects.push(...projects);
     } catch(e){ console.warn(`Failed to load ${file}:`,e); }
@@ -696,22 +708,25 @@ function buildGraphProj(projects){
     const coord=members.find(m=>isCoord(m.role));
     const partners=members.filter(m=>!isCoord(m.role)).slice(0,MAX_PARTNERS_PP);
 
-    const addOrg=(orgName,role)=>{
+    const addOrg=(orgName,role,country)=>{
       if(!orgName) return null;
       const oid=`org:${orgName}`;
+      const orgIsNL=NL_CODES.has((country||'').toUpperCase());
       if(!nm.has(oid)){
         const on={id:oid,type:'org',label:orgName,isCoord:role==='coord',
-          count:0,x:W/2+(Math.random()-.5)*320,y:H/2+(Math.random()-.5)*320};
+          isNL:orgIsNL,count:0,
+          x:W/2+(Math.random()-.5)*320,y:H/2+(Math.random()-.5)*320};
         nodes.push(on); nm.set(oid,on);
       }
       const on=nm.get(oid);
       on.count++;
       if(role==='coord') on.isCoord=true;
+      if(orgIsNL) on.isNL=true;  // once identified as NL, stays NL
       return oid;
     };
 
-    if(coord){ const oid=addOrg(coord.organisation||coord.name,'coord'); if(oid) links.push({source:pid,target:oid,role:'pi'}); }
-    for(const pt of partners){ const oid=addOrg(pt.organisation||pt.name,'partner'); if(oid) links.push({source:pid,target:oid,role:'partner'}); }
+    if(coord){ const oid=addOrg(coord.organisation||coord.name,'coord',coord.country); if(oid) links.push({source:pid,target:oid,role:'pi'}); }
+    for(const pt of partners){ const oid=addOrg(pt.organisation||pt.name,'partner',pt.country); if(oid) links.push({source:pid,target:oid,role:'partner'}); }
   });
   return {nodes,links};
 }
@@ -772,11 +787,13 @@ function render(){
     })
     .attr('class',d=>{
       if(d.type==='project'){
+        // Keep prog-specific class for toggle filtering; all render magenta via CSS
         const nc=d.pk==='erasmus'?'node-erasmus':d.pk==='h2020'?'node-h2020':'node-he';
         return `node-proj ${nc}`;
       }
       if(d.type==='country') return 'node-org node-country';
-      return `node-org ${d.isCoord?'node-org-pi':'node-org-pt'}`;
+      // Colour by nationality: orange = NL, blue = other
+      return `node-org ${d.isNL?'node-org-nl':'node-org-other'}`;
     })
     .call(d3.drag()
       .on('start',(e,d)=>{if(!e.active)simulation.alphaTarget(0.2).restart();d.fx=d.x;d.fy=d.y;})
@@ -793,11 +810,12 @@ function render(){
     .enter().append('text')
     .text(d=>(d.label||d.id).slice(0,32))
     .attr('font-size',d=>d.type==='country'?11:9)
-    .attr('fill',d=>d.type==='country'?'#58a6ff':d.isCoord?'#e3b341':'#a371f7')
+    .attr('fill',d=>d.type==='country'?'#22d3ee':d.isNL?'#fb923c':'#60a5fa')
     .attr('text-anchor','middle')
     .attr('dy',d=>-(Math.min(7+Math.sqrt(d.count||1)*1.8,24)+3))
     .style('pointer-events','none')
-    .style('user-select','none');
+    .style('user-select','none')
+    .style('display', showLabels ? null : 'none');
 
   _nodeSel=nodeSel; _linkSel=linkSel;
   applyGraphHighlight();
@@ -842,8 +860,8 @@ function showTT(e,d){
   } else if(d.type==='country'){
     h=`<div class="tth">${esc(d.label)}</div><div class="tts">${d.count} projects as coordinator</div>`;
   } else {
-    h=`<div class="tth">${esc(d.label)}</div>
-       <div class="tts">${d.isCoord?'🎯 Coordinator (PI)':'🔗 Partner'} · ${d.count} project${d.count!==1?'s':''}</div>`;
+    h=`<div class="tth" style="color:${d.isNL?'#fb923c':'#60a5fa'}">${esc(d.label)}</div>
+       <div class="tts">${d.isNL?'🇳🇱 NL org':'🌍 Non-NL org'} · ${d.isCoord?'🎯 Coordinator (PI)':'🔗 Partner'} · ${d.count} project${d.count!==1?'s':''}</div>`;
   }
   ttEl.innerHTML=h; ttEl.style.display='block'; moveTT(e);
 }
@@ -963,6 +981,13 @@ scEl.addEventListener('click',()=>{
   sbEl.classList.remove('has-match');
   applyGraphHighlight();
   updateProjList(filteredProjects());
+});
+
+// Labels toggle
+document.getElementById('labelsToggle').addEventListener('change',e=>{
+  showLabels=e.target.checked;
+  // Update live without full re-render
+  g.selectAll('text').style('display', showLabels ? null : 'none');
 });
 
 // Org search filter

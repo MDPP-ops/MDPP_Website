@@ -31,9 +31,9 @@ KEYWORDS = [
     "circulair textiel", "textiel recycling",
     "smart textile",
     "duurzame mode",
-    "lifecycle", "value chain",
+    "lifecycle", "textile value chain",
     "hergebruik", "biobased", "wearable",
-    "supply chain", "waardeketen", "levenscyclus",
+    "textile supply chain", "waardeketen", "levenscyclus",
     "biomaterial", "coating", "hemp", "hennep",
 ]
 
