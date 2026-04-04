@@ -155,7 +155,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0d1117;c
 /* NL organisations → orange */
 .node-org-nl   {fill:#c2410c;stroke:#fb923c;stroke-width:1.5}
 /* Non-NL organisations → blue */
-.node-org-other{fill:#1d4ed8;stroke:#60a5fa;stroke-width:1}
+.node-org-other{fill:#854d0e;stroke:#fbbf24;stroke-width:1}
 
 .node-proj{cursor:pointer}
 .node-org {cursor:pointer}
@@ -173,10 +173,10 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0d1117;c
 .node-he.h-pin      {filter:drop-shadow(0 0 8px #388bfd)!important}
 .node-h2020.h-pin   {filter:drop-shadow(0 0 8px #1f6feb)!important}
 .node-org-nl.h-pin   {stroke-width:3.5!important;filter:drop-shadow(0 0 8px #fb923c)!important}
-.node-org-other.h-pin{stroke-width:3.5!important;filter:drop-shadow(0 0 8px #60a5fa)!important}
+.node-org-other.h-pin{stroke-width:3.5!important;filter:drop-shadow(0 0 8px #fbbf24)!important}
 svg#graph-svg{cursor:default}
 .node-org-nl.org-glow   {stroke-width:3!important;filter:drop-shadow(0 0 7px #fb923c)}
-.node-org-other.org-glow{stroke-width:3!important;filter:drop-shadow(0 0 7px #60a5fa)}
+.node-org-other.org-glow{stroke-width:3!important;filter:drop-shadow(0 0 7px #fbbf24)}
 .link.link-hi{opacity:0.9!important;stroke-width:2.5!important}
 
 /* ── Tooltip ─────────────────────────────────────────────────────────── */
@@ -251,7 +251,7 @@ svg#graph-svg{cursor:default}
       <div class="lr"><div class="ldot" style="background:#1f6feb;border:1.5px solid #388bfd"></div><div class="ll">Horizon Europe project</div></div>
       <div class="lr"><div class="ldot" style="background:#0969da;border:1.5px solid #1f6feb"></div><div class="ll">Horizon 2020 project</div></div>
       <div class="lr" style="margin-top:5px"><div class="ldot" style="background:#c2410c;border:1.5px solid #fb923c"></div><div class="ll" style="color:#fb923c">🇳🇱 NL organisation</div></div>
-      <div class="lr"><div class="ldot" style="background:#1d4ed8;border:1px solid #60a5fa"></div><div class="ll">Non-NL organisation</div></div>
+      <div class="lr"><div class="ldot" style="background:#854d0e;border:1px solid #fbbf24"></div><div class="ll">Non-NL organisation</div></div>
       <div class="lr" style="margin-top:5px"><div class="lline" style="background:#e3b341"></div><div class="ll">PI / coordinator link</div></div>
       <div class="lr"><div class="lline" style="background:#3a4060"></div><div class="ll">Partner link</div></div>
       <div class="lr" style="margin-top:5px;font-size:9px;color:#484f58"><span>Circle size = funding amount</span></div>
@@ -1252,7 +1252,7 @@ function render(){
     .enter().append('text')
     .text(d=>(d.label||d.id).slice(0,38))
     .attr('font-size',d=> Math.min(7 + Math.sqrt(d.wcount||0)*1.4, 18))
-    .attr('fill',d=>d.isNL?'#fb923c':'#60a5fa')
+    .attr('fill',d=>d.isNL?'#fb923c':'#fbbf24')
     .attr('text-anchor','middle')
     .attr('dy',d=>-(d.r+3))
     .style('pointer-events','none')
@@ -1330,7 +1330,7 @@ function showTT(e,d){
        ${kws.length?`<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px">${kws.map(k=>`<span style="background:#1a2040;color:#79c0ff;font-size:9px;padding:1px 5px;border-radius:10px;border:1px solid #2d3a6b">${esc(k)}</span>`).join('')}</div>`:''}
        ${p.project_page_url?`<div style="margin-top:5px"><a href="${p.project_page_url}" target="_blank">Open project page</a></div>`:''}`;
   } else {
-    h=`<div class="tth" style="color:${d.isNL?'#fb923c':'#60a5fa'}">${esc(d.label)}</div>
+    h=`<div class="tth" style="color:${d.isNL?'#fb923c':'#fbbf24'}">${esc(d.label)}</div>
        <div class="tts">${d.isNL?'🇳🇱 NL org':'🌍 Non-NL org'} · ${d.isCoord?'PI/Coordinator':'Partner'} · ${d.count} project${d.count!==1?'s':''}</div>
        <div class="tts" style="color:#d2a8ff">${fmtEuro(d.totalFund||0)} funding share</div>`;
   }
