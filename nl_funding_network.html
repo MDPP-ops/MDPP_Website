@@ -342,6 +342,7 @@ const DEFAULT_KEYWORDS = [
 
 const MAX_PROJ_GRAPH  = 600;
 const MAX_PARTNERS_PP = 6;
+const ORG_LABEL_MIN   = 3;   // minimum weighted project count to show org label in main view
 
 // ══════════════════════════════════════════════════════════════════════════
 // STATE
@@ -917,13 +918,15 @@ function buildGraph(projects){
       if(!nm.has(oid)){
         const tf=orgFunding.get(orgName)||0;
         const on={id:oid,type:'org',label:orgName,isCoord:role==='coord',
-          isNL:orgIsNL,count:0,totalFund:tf,
+          isNL:orgIsNL,count:0,wcount:0,totalFund:tf,
           r:orgRadius(tf,1),
           x:W/2+(Math.random()-.5)*320,y:H/2+(Math.random()-.5)*320};
         nodes.push(on); nm.set(oid,on);
       }
       const on=nm.get(oid);
       on.count++;
+      // Weighted count: EU projects (erasmus/he/h2020) count double, NWO counts single
+      on.wcount += (p._src==='nwo') ? 1 : 2;
       on.r=orgRadius(on.totalFund, on.count);
       if(role==='coord') on.isCoord=true;
       if(orgIsNL) on.isNL=true;
@@ -995,17 +998,20 @@ function applyHoverPreview(focusDatum){
 function updatePinLabels(focusDatum){
   if(!_labelSel||!_projLabelSel) return;
   if(!focusDatum){
-    // No pin — revert to toggle state
-    _labelSel.style('display', showOrgLabels ? null : 'none');
+    // No pin — revert to toggle state with wcount threshold
+    _labelSel.style('display', d=>{
+      if(!showOrgLabels) return 'none';
+      return (d.wcount||0)>=ORG_LABEL_MIN ? null : 'none';
+    });
     _projLabelSel.style('display', showProjLabels ? null : 'none');
     return;
   }
   // 2-level neighbourhood for labels
   const visible=getNeighbours2(focusDatum.id);
-  // Org labels: show for visible nodes in neighbourhood (or all if toggle on)
+  // Org labels: in pinned mode show ALL visible neighbours (no threshold)
   _labelSel.style('display', d=>{
-    if(showOrgLabels) return null;
-    return visible.has(d.id) ? null : 'none';
+    if(showOrgLabels) return (d.wcount||0)>=ORG_LABEL_MIN ? null : 'none';  // toggle: respect threshold
+    return visible.has(d.id) ? null : 'none';  // pinned: show all in neighbourhood
   });
   // Project labels: show for visible project nodes in neighbourhood (or all if toggle on)
   _projLabelSel.style('display', d=>{
@@ -1101,18 +1107,18 @@ function render(){
       }
     });
 
-  // Org labels
+  // Org labels — font size scaled by weighted project count, hidden if wcount < 3 in main view
   const labelSel=g.append('g').selectAll('text')
     .data(nodes.filter(d=>d.type!=='project'))
     .enter().append('text')
-    .text(d=>(d.label||d.id).slice(0,32))
-    .attr('font-size',9)
+    .text(d=>(d.label||d.id).slice(0,38))
+    .attr('font-size',d=> Math.min(7 + Math.sqrt(d.wcount||0)*1.4, 18))
     .attr('fill',d=>d.isNL?'#fb923c':'#60a5fa')
     .attr('text-anchor','middle')
     .attr('dy',d=>-(d.r+3))
     .style('pointer-events','none')
     .style('user-select','none')
-    .style('display', showOrgLabels ? null : 'none');
+    .style('display', d=> showOrgLabels && (d.wcount||0)>=ORG_LABEL_MIN ? null : 'none');
 
   // Project labels
   const projLabelSel=g.append('g').selectAll('text')
@@ -1327,7 +1333,10 @@ document.getElementById('orgLabelsToggle').addEventListener('change',e=>{
   if(pinnedNode){
     updatePinLabels(pinnedNode);
   } else {
-    if(_labelSel) _labelSel.style('display', showOrgLabels ? null : 'none');
+    if(_labelSel) _labelSel.style('display', d=>{
+      if(!showOrgLabels) return 'none';
+      return (d.wcount||0)>=ORG_LABEL_MIN ? null : 'none';
+    });
   }
 });
 document.getElementById('projLabelsToggle').addEventListener('change',e=>{
