@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>NL Textile Research Funding Network — All Sources</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0d1117;color:#e6edf3;overflow:hidden;height:100vh;display:flex;flex-direction:column}
+
+/* ── Top bar ─────────────────────────────────────────────────────────── */
+#topbar{display:flex;align-items:center;gap:9px;padding:7px 12px;background:#161b22;border-bottom:1px solid #30363d;flex-shrink:0;flex-wrap:wrap}
+#topbar h1{font-size:13px;font-weight:700;color:#58a6ff;white-space:nowrap;letter-spacing:.02em}
+.vsep{width:1px;height:20px;background:#30363d;flex-shrink:0}
+
+.btn-group{display:flex;gap:3px}
+.tog-btn{padding:3px 9px;font-size:11px;border-radius:4px;border:1px solid #30363d;background:#21262d;color:#8b949e;cursor:pointer;transition:all .15s;white-space:nowrap}
+.tog-btn.active{border-color:#388bfd;background:#1f6feb;color:#fff}
+.tog-btn.prog-nwo.active    {background:#7c3aed;border-color:#a78bfa}
+.tog-btn.prog-erasmus.active{background:#238636;border-color:#3fb950}
+.tog-btn.prog-he.active     {background:#1f6feb;border-color:#388bfd}
+.tog-btn.prog-h2020.active  {background:#0969da;border-color:#1f6feb}
+
+.stat{font-size:11px;color:#8b949e;white-space:nowrap}
+.stat b{font-weight:700}
+.s-count b{color:#e6edf3}
+.s-pct   b{color:#3fb950}
+.s-fund  b{color:#d2a8ff}
+
+/* ── Year range ──────────────────────────────────────────────────────── */
+.yr-wrap{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.yr-label{font-size:11px;color:#8b949e}
+.yr-track{position:relative;width:140px;height:20px;display:flex;align-items:center}
+.yr-track input[type=range]{position:absolute;width:100%;pointer-events:none;-webkit-appearance:none;appearance:none;height:3px;border-radius:2px;background:transparent;outline:none}
+.yr-track input[type=range]::-webkit-slider-thumb{pointer-events:all;-webkit-appearance:none;appearance:none;width:13px;height:13px;border-radius:50%;cursor:pointer;border:1.5px solid #30363d}
+#yrFrom::-webkit-slider-thumb{background:#58a6ff}
+#yrTo::-webkit-slider-thumb  {background:#3fb950}
+.yr-fill{position:absolute;height:3px;border-radius:2px;background:linear-gradient(90deg,#58a6ff,#3fb950);pointer-events:none}
+.yr-vals{font-size:11px;color:#e6edf3;font-weight:600;min-width:68px;text-align:center}
+
+#searchBox{padding:3px 9px;font-size:11px;border-radius:5px;border:1px solid #30363d;background:#0d1117;color:#e6edf3;width:150px;transition:border-color .15s}
+#searchBox:focus{outline:none;border-color:#58a6ff}
+#searchBox.has-match{border-color:#3fb950}
+#searchBox::placeholder{color:#484f58}
+#searchClear{font-size:11px;padding:3px 6px;border-radius:4px;border:1px solid #30363d;background:#21262d;color:#8b949e;cursor:pointer;display:none}
+#searchClear.visible{display:block}
+
+/* ── Layout ──────────────────────────────────────────────────────────── */
+#main{display:flex;flex:1;overflow:hidden}
+
+/* ── Left sidebar ─────────────────────────────────────────────────────── */
+#sidebar{width:222px;flex-shrink:0;background:#161b22;border-right:1px solid #30363d;display:flex;flex-direction:column;overflow:hidden}
+
+#legend{padding:7px 10px 6px;border-bottom:1px solid #30363d;flex-shrink:0}
+.leg-title{font-size:10px;font-weight:600;color:#8b949e;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.lr{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.ldot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.lline{width:26px;height:3px;border-radius:2px;flex-shrink:0}
+.ll{font-size:10px;color:#8b949e}
+
+#kw-section{display:flex;flex-direction:column;overflow:hidden;flex:1}
+#kw-hdr{padding:7px 10px 5px;font-size:10px;font-weight:600;color:#8b949e;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #30363d;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.kwab{font-size:10px;padding:1px 6px;border-radius:3px;border:1px solid #30363d;background:#21262d;color:#8b949e;cursor:pointer}
+.kwab:hover{color:#e6edf3}
+#kw-list{flex:1;overflow-y:auto;padding:3px 0}
+#kw-list::-webkit-scrollbar{width:4px}
+#kw-list::-webkit-scrollbar-thumb{background:#30363d;border-radius:2px}
+.kw-item{display:flex;align-items:center;gap:5px;padding:3px 10px;cursor:pointer;border-radius:4px;margin:1px 4px;transition:background .1s}
+.kw-item:hover{background:#21262d}
+.kw-item input[type=checkbox]{accent-color:#1f6feb;width:12px;height:12px;flex-shrink:0}
+.kw-label{font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kw-cnt{font-size:10px;color:#58a6ff;background:#0d2040;border-radius:8px;padding:1px 5px;min-width:22px;text-align:center;flex-shrink:0}
+.kw-rm{font-size:11px;color:#484f58;cursor:pointer;padding:0 2px;flex-shrink:0}
+.kw-rm:hover{color:#f85149}
+#kw-add{padding:5px 8px;border-top:1px solid #30363d;display:flex;gap:4px;flex-shrink:0}
+#newKwIn{flex:1;font-size:11px;padding:3px 7px;border-radius:4px;border:1px solid #30363d;background:#0d1117;color:#e6edf3}
+#newKwIn::placeholder{color:#484f58}
+#addKwBtn{font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid #30363d;background:#21262d;color:#8b949e;cursor:pointer}
+#addKwBtn:hover{color:#e6edf3}
+
+/* ── Canvas ───────────────────────────────────────────────────────────── */
+#canvas-wrap{flex:1;position:relative;overflow:hidden}
+#graph-svg{width:100%;height:100%;display:block}
+
+/* ── Right panel ──────────────────────────────────────────────────────── */
+#rpanel{width:320px;flex-shrink:0;background:#161b22;border-left:1px solid #30363d;display:flex;flex-direction:column;overflow:hidden}
+#panel-tabs{display:flex;border-bottom:1px solid #30363d;flex-shrink:0}
+.ptab{flex:1;text-align:center;padding:7px 4px;font-size:11px;font-weight:600;color:#8b949e;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none}
+.ptab.active{color:#e6edf3;border-bottom-color:#1f6feb}
+.ptab:hover{color:#e6edf3}
+
+/* Project list */
+#proj-pane{display:flex;flex-direction:column;flex:1;overflow:hidden}
+#proj-header{padding:5px 10px 4px;font-size:10px;color:#8b949e;flex-shrink:0;display:flex;justify-content:space-between;align-items:center}
+#proj-list{flex:1;overflow-y:auto;padding:3px 0}
+#proj-list::-webkit-scrollbar{width:4px}
+#proj-list::-webkit-scrollbar-thumb{background:#30363d;border-radius:2px}
+.proj-item{padding:5px 9px;cursor:pointer;border-radius:4px;margin:1px 4px;transition:background .1s;border-left:2px solid transparent;display:flex;gap:6px;align-items:flex-start}
+.proj-item:hover{background:#21262d}
+.proj-item.highlighted{background:#0d2510;border-left-color:#3fb950}
+.proj-item.excluded{opacity:0.3}
+.proj-content{flex:1;min-width:0}
+.proj-title{font-size:11px;color:#e6edf3;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.proj-pi{font-size:10px;color:#e3b341;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proj-kws{font-size:9px;color:#79c0ff;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proj-meta{font-size:10px;color:#8b949e;margin-top:2px;display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.prog-badge{font-size:9px;padding:1px 4px;border-radius:3px;font-weight:600;white-space:nowrap}
+.prog-badge.nwo{background:#1a0a3a;color:#a78bfa}
+.prog-badge.erasmus{background:#0d2a10;color:#3fb950}
+.prog-badge.he{background:#0d1f3c;color:#79c0ff}
+.prog-badge.h2020{background:#0d1830;color:#58a6ff}
+.excl-cb{width:13px;height:13px;accent-color:#f85149;flex-shrink:0;margin-top:2px;cursor:pointer}
+
+/* NL orgs list */
+#orgs-pane{display:none;flex-direction:column;flex:1;overflow:hidden}
+#orgs-pane.active{display:flex}
+#orgs-header{padding:5px 10px 4px;font-size:10px;color:#8b949e;flex-shrink:0}
+#orgs-search{padding:4px 8px;flex-shrink:0}
+#orgSearchIn{width:100%;font-size:11px;padding:3px 7px;border-radius:4px;border:1px solid #30363d;background:#0d1117;color:#e6edf3}
+#orgSearchIn::placeholder{color:#484f58}
+#orgs-list{flex:1;overflow-y:auto;padding:3px 0}
+#orgs-list::-webkit-scrollbar{width:4px}
+#orgs-list::-webkit-scrollbar-thumb{background:#30363d;border-radius:2px}
+.org-item{padding:5px 9px;cursor:pointer;border-radius:4px;margin:1px 4px;border-left:3px solid transparent;transition:background .1s}
+.org-item:hover{background:#21262d}
+.org-item.org-pi{border-left-color:#e3b341}
+.org-item.org-pt{border-left-color:#6e40c9}
+.org-item.selected{background:#1a1a2a}
+.org-name{font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.org-name.pi-name{color:#e3b341}
+.org-name.pt-name{color:#a371f7}
+.org-stats{font-size:10px;color:#8b949e;margin-top:2px;display:flex;gap:8px}
+.org-stats .pi-cnt{color:#e3b341}
+.org-stats .pt-cnt{color:#a371f7}
+.role-indicator{font-size:9px;padding:1px 4px;border-radius:3px;font-weight:600}
+.ri-pi{background:#2a1a00;color:#e3b341}
+.ri-pt{background:#1a0a3a;color:#a371f7}
+.ri-both{background:#1a1a00;color:#d29922}
+
+/* Footer */
+#rpanel-footer{padding:5px 9px;border-top:1px solid #30363d;flex-shrink:0;display:flex;gap:4px}
+#rpanel-footer button{flex:1;font-size:11px;padding:4px;border-radius:4px;border:1px solid #30363d;background:#21262d;color:#8b949e;cursor:pointer;text-align:center}
+#rpanel-footer button:hover{color:#e6edf3;border-color:#58a6ff}
+
+/* ── Graph elements ──────────────────────────────────────────────────── */
+.link-pi{stroke:#e3b341;stroke-width:1.8;opacity:0.6}
+.link-partner{stroke:#3a4060;stroke-width:1;opacity:0.45}
+
+/* Project nodes — coloured by provenance */
+.node-nwo     {fill:#7c3aed;stroke:#a78bfa;stroke-width:1.5}
+.node-erasmus {fill:#238636;stroke:#3fb950;stroke-width:1.5}
+.node-he      {fill:#1f6feb;stroke:#388bfd;stroke-width:1.5}
+.node-h2020   {fill:#0969da;stroke:#1f6feb;stroke-width:1.5}
+/* NL organisations → orange */
+.node-org-nl   {fill:#c2410c;stroke:#fb923c;stroke-width:1.5}
+/* Non-NL organisations → blue */
+.node-org-other{fill:#1d4ed8;stroke:#60a5fa;stroke-width:1}
+
+.node-proj{cursor:pointer}
+.node-org {cursor:pointer}
+.node-proj.dimmed,.node-org.dimmed,.link.dimmed{opacity:0.08}
+.node-proj.lit{stroke-width:3!important;filter:drop-shadow(0 0 6px #3fb950)}
+
+/* ── Hover / pin highlight ──────────────────────────────────────────── */
+.node-proj.h-dim,.node-org.h-dim{opacity:0.06!important;transition:opacity .15s}
+.link.h-dim                     {opacity:0.04!important;transition:opacity .15s}
+.node-proj.h-lit,.node-org.h-lit{opacity:1  !important;transition:opacity .15s}
+.link.h-lit                     {opacity:1  !important;stroke-width:2.5!important;transition:opacity .15s,stroke-width .1s}
+.node-proj.h-pin{stroke-width:3.5!important}
+.node-nwo.h-pin     {filter:drop-shadow(0 0 8px #a78bfa)!important}
+.node-erasmus.h-pin {filter:drop-shadow(0 0 8px #3fb950)!important}
+.node-he.h-pin      {filter:drop-shadow(0 0 8px #388bfd)!important}
+.node-h2020.h-pin   {filter:drop-shadow(0 0 8px #1f6feb)!important}
+.node-org-nl.h-pin   {stroke-width:3.5!important;filter:drop-shadow(0 0 8px #fb923c)!important}
+.node-org-other.h-pin{stroke-width:3.5!important;filter:drop-shadow(0 0 8px #60a5fa)!important}
+svg#graph-svg{cursor:default}
+.node-org-nl.org-glow   {stroke-width:3!important;filter:drop-shadow(0 0 7px #fb923c)}
+.node-org-other.org-glow{stroke-width:3!important;filter:drop-shadow(0 0 7px #60a5fa)}
+.link.link-hi{opacity:0.9!important;stroke-width:2.5!important}
+
+/* ── Tooltip ─────────────────────────────────────────────────────────── */
+#tt{position:fixed;pointer-events:none;background:#1c2128;border:1px solid #30363d;border-radius:6px;padding:8px 12px;font-size:11px;max-width:320px;line-height:1.5;z-index:100;display:none}
+#tt .tth{font-weight:600;color:#e6edf3;margin-bottom:3px}
+#tt .tts{color:#8b949e}
+#tt .ttg{color:#d2a8ff;font-weight:600}
+#tt a{color:#58a6ff;font-size:10px;text-decoration:none}
+
+/* ── Loading ─────────────────────────────────────────────────────────── */
+#loading{position:fixed;inset:0;background:#0d1117;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:14px}
+#loading h2{font-size:15px;color:#8b949e}
+.spinner{width:38px;height:38px;border:3px solid #21262d;border-top-color:#1f6feb;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#load-s{font-size:12px;color:#484f58}
+</style>
+</head>
+<body>
+
+<!-- ═══ TOP BAR ══════════════════════════════════════════════════════════ -->
+<div id="topbar">
+  <h1>🇳🇱 NL Textile Research Funding</h1>
+  <div class="vsep"></div>
+
+  <div class="btn-group" id="progGroup">
+    <button class="tog-btn prog-nwo active"     data-prog="nwo"     title="NWO / SIA">NWO</button>
+    <button class="tog-btn prog-erasmus active"  data-prog="erasmus" title="Erasmus+">E+</button>
+    <button class="tog-btn prog-he active"       data-prog="he"      title="Horizon Europe">HE</button>
+    <button class="tog-btn prog-h2020 active"    data-prog="h2020"   title="Horizon 2020">H2020</button>
+  </div>
+  <div class="vsep"></div>
+
+  <!-- Year range -->
+  <div class="yr-wrap">
+    <span class="yr-label">Years</span>
+    <div class="yr-track">
+      <div class="yr-fill" id="yrFill"></div>
+      <input type="range" id="yrFrom" min="2010" max="2027" value="2014" step="1">
+      <input type="range" id="yrTo"   min="2010" max="2027" value="2026" step="1">
+    </div>
+    <span class="yr-vals" id="yrVals">2014 – 2026</span>
+  </div>
+  <div class="vsep"></div>
+
+  <div class="stat s-count">Projects: <b id="s-matched">—</b></div>
+  <div class="stat s-fund">Funding: <b id="s-fund">—</b> <span style="color:#8b949e;font-size:10px">of <b id="s-fund-total">—</b></span> (<b id="s-fund-pct" style="color:#d2a8ff">—</b>)</div>
+  <div class="stat">Excluded: <b id="s-excluded" style="color:#f85149">0</b></div>
+  <div class="vsep"></div>
+
+  <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#8b949e;cursor:pointer;white-space:nowrap;user-select:none">
+    <input type="checkbox" id="labelsToggle" style="accent-color:#58a6ff;width:12px;height:12px">
+    Labels
+  </label>
+  <div class="vsep"></div>
+  <input id="searchBox" type="search" placeholder="Search… (Enter to lock)">
+  <button id="searchClear" title="Clear search">✕</button>
+</div>
+
+<!-- ═══ MAIN ═════════════════════════════════════════════════════════════ -->
+<div id="main">
+
+  <!-- ─ Sidebar ────────────────────────────────────────────────────────── -->
+  <div id="sidebar">
+    <div id="legend">
+      <div class="leg-title">Legend</div>
+      <div class="lr"><div class="ldot" style="background:#7c3aed;border:1.5px solid #a78bfa"></div><div class="ll">NWO / SIA project</div></div>
+      <div class="lr"><div class="ldot" style="background:#238636;border:1.5px solid #3fb950"></div><div class="ll">Erasmus+ project</div></div>
+      <div class="lr"><div class="ldot" style="background:#1f6feb;border:1.5px solid #388bfd"></div><div class="ll">Horizon Europe project</div></div>
+      <div class="lr"><div class="ldot" style="background:#0969da;border:1.5px solid #1f6feb"></div><div class="ll">Horizon 2020 project</div></div>
+      <div class="lr" style="margin-top:5px"><div class="ldot" style="background:#c2410c;border:1.5px solid #fb923c"></div><div class="ll" style="color:#fb923c">🇳🇱 NL organisation</div></div>
+      <div class="lr"><div class="ldot" style="background:#1d4ed8;border:1px solid #60a5fa"></div><div class="ll">Non-NL organisation</div></div>
+      <div class="lr" style="margin-top:5px"><div class="lline" style="background:#e3b341"></div><div class="ll">PI / coordinator link</div></div>
+      <div class="lr"><div class="lline" style="background:#3a4060"></div><div class="ll">Partner link</div></div>
+      <div class="lr" style="margin-top:5px;font-size:9px;color:#484f58"><span>Circle size = funding amount</span></div>
+    </div>
+    <div id="kw-section">
+      <div id="kw-hdr">
+        Keywords
+        <div style="display:flex;gap:3px">
+          <button class="kwab" id="btnAll">all</button>
+          <button class="kwab" id="btnNone">none</button>
+        </div>
+      </div>
+      <div id="kw-list"></div>
+      <div id="kw-add">
+        <input id="newKwIn" type="text" placeholder="Add keyword…">
+        <button id="addKwBtn">+</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─ Canvas ─────────────────────────────────────────────────────────── -->
+  <div id="canvas-wrap">
+    <svg id="graph-svg"></svg>
+  </div>
+
+  <!-- ─ Right panel ────────────────────────────────────────────────────── -->
+  <div id="rpanel">
+    <div id="panel-tabs">
+      <div class="ptab active" data-panel="proj">Projects <span id="proj-count" style="color:#8b949e;font-weight:400;font-size:10px">0</span></div>
+      <div class="ptab" data-panel="orgs">🇳🇱 NL Orgs <span id="nl-org-count" style="color:#8b949e;font-weight:400;font-size:10px">0</span></div>
+    </div>
+
+    <!-- Projects pane -->
+    <div id="proj-pane">
+      <div id="proj-header">
+        <span style="color:#8b949e;font-size:10px">✓ = include · ✗ = exclude erroneous</span>
+      </div>
+      <div id="proj-list"></div>
+    </div>
+
+    <!-- NL Orgs pane -->
+    <div id="orgs-pane">
+      <div id="orgs-header">
+        <span style="font-size:10px;color:#8b949e">Click org to highlight projects</span>
+        <span id="nl-org-count2" style="color:#58a6ff;font-weight:700"></span>
+      </div>
+      <div id="orgs-search">
+        <input id="orgSearchIn" type="search" placeholder="Filter organisations…">
+      </div>
+      <div id="orgs-list"></div>
+    </div>
+
+    <div id="rpanel-footer">
+      <button id="downloadBtn">⬇ Download CSV</button>
+      <button id="resetExclBtn">Reset excluded</button>
+    </div>
+  </div>
+</div>
+
+<div id="tt"></div>
+<div id="loading">
+  <div class="spinner"></div>
+  <h2>Loading NWO + EU project data…</h2>
+  <div id="load-s"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════════════════════════════════════
+const NL_CODES = new Set(['NL','NLD','NETHERLANDS','THE NETHERLANDS']);
+const COORD_ROLES_EU  = new Set(['coordinator','lead','coordinating institution']);
+const COORD_ROLES_NWO = new Set(['main applicant','project leader']);
+
+const DEFAULT_KEYWORDS = [
+  'textile','textiel','fashion','garment',
+  'wool','wol','cotton','katoen',
+  'fiber','fibre','vezel','weven','kleding',
+  'zijde','polyester','denim','leather','fabric','dye',
+  'recycled textile','circular textile','circular fashion',
+  'circulair textiel','textiel recycling','smart textile',
+  'duurzame mode','textile lifecycle','textile value chain',
+  'hergebruik','wearable',
+  'textile supply chain','waardeketen','levenscyclus',
+  'hemp','hennep',
+  'footwear','shoes','clothing','cloth','yarn','thread','flax',
+];
+
+const MAX_PROJ_GRAPH  = 600;
+const MAX_PARTNERS_PP = 6;
+
+// ══════════════════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════════════════
+let allProjects  = [];
+let metaFunding  = { nwo:0, erasmus:0, he:0, h2020:0 };
+let activeKw     = new Set(['garment','clothing','textile','footwear','shoes','leather','fashion']);
+let activeProgs  = new Set(['nwo','erasmus','he','h2020']);
+let excludedIds  = new Set();     // project_ids manually excluded
+let searchTerm   = '';
+let searchLocked = false;
+let highlightSet = new Set();
+let orgFocusSet  = new Set();
+let selectedOrg  = null;
+let simulation   = null;
+let activePanel  = 'proj';
+let orgFilter    = '';
+let showLabels   = false;
+let pinnedNode   = null;
+let neighborMap  = new Map();
+let yearMin      = 2014;
+let yearMax      = 2026;
+
+// ══════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════════════════
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function fmtEuro(v) {
+  v=+v||0;
+  if(v>=1e9) return `€${(v/1e9).toFixed(2)}B`;
+  if(v>=1e6) return `€${(v/1e6).toFixed(1)}M`;
+  if(v>=1e3) return `€${(v/1e3).toFixed(0)}K`;
+  return `€${v.toFixed(0)}`;
+}
+
+function progKey(p) {
+  if(p._src==='nwo') return 'nwo';
+  const pg=(p.programme||'').toLowerCase();
+  if(p._src==='erasmus'||pg.includes('erasmus')) return 'erasmus';
+  if(pg.includes('2020')||pg.includes('h2020'))  return 'h2020';
+  return 'he';
+}
+
+function isNLProject(p) {
+  // NWO projects are inherently NL
+  if(p._src==='nwo') return true;
+  if(NL_CODES.has((p._pi_country||'').toUpperCase())) return true;
+  for(const m of(p.project_members||[]))
+    if(NL_CODES.has((m.country||'').toUpperCase())) return true;
+  return false;
+}
+
+function isCoord(role, src) {
+  const r=(role||'').toLowerCase().replace(/[_-]/g,' ').trim();
+  if(src==='nwo') return COORD_ROLES_NWO.has(r);
+  return COORD_ROLES_EU.has(r);
+}
+
+function computeDisplayName(p) {
+  if(p._src==='nwo') {
+    const t=(p.title||p.title_en||'').trim();
+    return t.slice(0,55) || '(no title)';
+  }
+  if(p._src==='cordis') {
+    const acr=(p.acronym||'').trim();
+    if(acr) return acr;
+  }
+  const title=(p.title_en||'').trim();
+  const dashIdx=title.indexOf(' - ');
+  if(dashIdx>0 && dashIdx<=22) {
+    const prefix=title.slice(0,dashIdx).trim();
+    if(prefix.length>=2 && /^[A-Z0-9][A-Z0-9\s\-\.]{0,21}$/i.test(prefix)
+        && (prefix===prefix.toUpperCase() || prefix.replace(/\s/g,'').length<=12))
+      return prefix;
+  }
+  return title.slice(0,55) || '(no title)';
+}
+
+function projectYear(p) {
+  if(p._src==='erasmus') {
+    const cy=parseInt(p.call_year); return isNaN(cy)?null:cy;
+  }
+  const sd=String(p.start_date||'');
+  if(sd.length>=4){ const yr=parseInt(sd.slice(0,4)); return isNaN(yr)?null:yr; }
+  return null;
+}
+
+function extractYear(dateStr) {
+  if(!dateStr) return null;
+  const s=String(dateStr).trim();
+  if(s.length>=4){ const y=parseInt(s.slice(0,4)); return isNaN(y)?null:y; }
+  return null;
+}
+
+function projectActiveInRange(p, rangeMin, rangeMax) {
+  if(p._src==='erasmus') {
+    const cy=parseInt(p.call_year);
+    if(isNaN(cy)) return true;
+    return cy>=rangeMin && cy<=rangeMax;
+  }
+  const startYr=extractYear(p.start_date);
+  const endYr  =extractYear(p.end_date);
+  if(startYr===null && endYr===null) return true;
+  const projStart=startYr!==null ? startYr : 0;
+  const projEnd  =endYr  !==null ? endYr   : 9999;
+  return projStart<=rangeMax && projEnd>=rangeMin;
+}
+
+function getPIName(p) {
+  if(p._pi_name) return p._pi_name;
+  const members=p.project_members||[];
+  for(const m of members) {
+    const r=(m.role||'').toLowerCase().replace(/[_-]/g,' ').trim();
+    if(COORD_ROLES_NWO.has(r) || COORD_ROLES_EU.has(r)) {
+      if(m.first_name||m.last_name) return `${m.first_name||''} ${m.last_name||''}`.trim();
+      if(m.name) return m.name;
+    }
+  }
+  return '';
+}
+
+function getPIInstitution(p) {
+  if(p._pi_institution) return p._pi_institution;
+  const members=p.project_members||[];
+  for(const m of members) {
+    const r=(m.role||'').toLowerCase().replace(/[_-]/g,' ').trim();
+    if(COORD_ROLES_NWO.has(r) || COORD_ROLES_EU.has(r)) {
+      return (m.organisation||'').split('||')[0].trim();
+    }
+  }
+  return '';
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// DATA LOADING
+// ══════════════════════════════════════════════════════════════════════════
+async function loadData() {
+  const setS = s => document.getElementById('load-s').textContent=s;
+
+  // --- NWO ---
+  setS('Loading nwo_textile_raw.json…');
+  try {
+    const r=await fetch('nwo_textile_raw.json');
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    const raw=await r.json();
+    const projects=Array.isArray(raw)?raw:(raw.projects||[]);
+    projects.forEach(p=>{
+      p._src='nwo';
+      p.title_en=p.title||'';
+      p.ec_grant_num=0; // NWO has no funding amounts in this dataset
+      const members=p.project_members||[];
+      const pi=members.find(m=>/main applicant/i.test(m.role||''))
+              ||members.find(m=>/project leader/i.test(m.role||''))
+              ||members[0]||null;
+      p._pi_name=pi? `${pi.first_name||''} ${pi.last_name||''}`.trim() :'';
+      p._pi_institution=pi? (pi.organisation||'').split('||')[0].trim() :'';
+      p.project_page_url=`https://www.nwo.nl/projecten/${p.project_id}`;
+      p._progKey=progKey(p);
+      p._isNL=true;  // All NWO projects are NL
+      p._display_name=computeDisplayName(p);
+      const hay=((p.title_en||'')+' '+(p.summary_nl||'')+' '+(p.summary_en||'')).toLowerCase();
+      p._hay=hay;
+      p._matched_terms=DEFAULT_KEYWORDS.filter(k=>hay.includes(k.toLowerCase()));
+    });
+    allProjects.push(...projects);
+  } catch(e){ console.warn('Failed to load NWO:',e); }
+
+  // --- EU sources ---
+  for(const {file,src} of [
+    {file:'erasmus_textile_projects.json',src:'erasmus'},
+    {file:'cordis_textile_projects.json', src:'cordis'},
+  ]) {
+    setS(`Loading ${file}…`);
+    try {
+      const r=await fetch(file);
+      if(!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data=await r.json();
+      const projects=data.projects||(Array.isArray(data)?data:[]);
+      projects.forEach(p=>{
+        p._src=src;
+        if(p.ec_grant_num===undefined){
+          const raw=String(p.ec_grant||'0').replace(/\s/g,'').replace(',','.');
+          p.ec_grant_num=parseFloat(raw)||0;
+        }
+        p._progKey=progKey(p);
+        p._isNL=isNLProject(p);
+        p._display_name=computeDisplayName(p);
+        const hay=((p.title_en||'')+' '+(p.objective||'')+' '+(p.topics||'')).toLowerCase();
+        p._hay=hay;
+        p._matched_terms=DEFAULT_KEYWORDS.filter(k=>hay.includes(k.toLowerCase()));
+      });
+      // Only keep EU projects with NL partner
+      allProjects.push(...projects.filter(p=>p._isNL));
+    } catch(e){ console.warn(`Failed to load ${file}:`,e); }
+  }
+
+  // Compute total funding per programme across ALL loaded projects
+  for(const p of allProjects){
+    const f=p.ec_grant_num||0;
+    const pk=p._progKey;
+    if(pk==='nwo')        metaFunding.nwo    +=f;
+    else if(pk==='erasmus') metaFunding.erasmus+=f;
+    else if(pk==='he')      metaFunding.he     +=f;
+    else if(pk==='h2020')   metaFunding.h2020  +=f;
+  }
+
+  document.getElementById('loading').style.display='none';
+  renderKeywords();
+  render();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// FILTERING
+// ══════════════════════════════════════════════════════════════════════════
+function filteredProjects() {
+  return allProjects.filter(p=>{
+    if(excludedIds.has(p.project_id)) return false;
+    if(!activeProgs.has(p._progKey)) return false;
+    if(activeKw.size>0 && !(p._matched_terms||[]).some(t=>activeKw.has(t))) return false;
+    if(!projectActiveInRange(p, yearMin, yearMax)) return false;
+    return true;
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// KEYWORD PANEL
+// ══════════════════════════════════════════════════════════════════════════
+function allKwSet() {
+  const s=new Set(DEFAULT_KEYWORDS);
+  allProjects.forEach(p=>(p._matched_terms||[]).forEach(k=>s.add(k)));
+  return s;
+}
+function buildKwCounts() {
+  const m=new Map();
+  allProjects.forEach(p=>{
+    if(excludedIds.has(p.project_id)) return;
+    if(!activeProgs.has(p._progKey)) return;
+    (p._matched_terms||[]).forEach(k=>m.set(k,(m.get(k)||0)+1));
+  });
+  return m;
+}
+function renderKeywords() {
+  const counts=buildKwCounts();
+  const kws=[...allKwSet()].sort((a,b)=>(counts.get(b)||0)-(counts.get(a)||0));
+  const list=document.getElementById('kw-list');
+  list.innerHTML='';
+  for(const kw of kws){
+    const cnt=counts.get(kw)||0;
+    const div=document.createElement('div');
+    div.className='kw-item';
+    div.innerHTML=`
+      <input type="checkbox" ${activeKw.has(kw)?'checked':''} data-kw="${esc(kw)}">
+      <span class="kw-label" title="${esc(kw)}">${esc(kw)}</span>
+      <span class="kw-cnt">${cnt}</span>
+      <span class="kw-rm" data-kw="${esc(kw)}">×</span>`;
+    list.appendChild(div);
+  }
+  list.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.addEventListener('change',e=>{
+    const kw=e.target.dataset.kw;
+    e.target.checked?activeKw.add(kw):activeKw.delete(kw);
+    render();
+  }));
+  list.querySelectorAll('.kw-rm').forEach(b=>b.addEventListener('click',e=>{
+    const kw=e.target.dataset.kw;
+    activeKw.delete(kw);
+    allProjects.forEach(p=>{if(p._matched_terms)p._matched_terms=p._matched_terms.filter(t=>t!==kw);});
+    renderKeywords(); render();
+  }));
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// STATS
+// ══════════════════════════════════════════════════════════════════════════
+function updateStats(projects) {
+  const fund=projects.reduce((s,p)=>s+(p.ec_grant_num||0),0);
+  let totalFund=0;
+  for(const pk of activeProgs) totalFund += metaFunding[pk]||0;
+  const fundPct=totalFund>0?(fund/totalFund*100).toFixed(1):'—';
+
+  document.getElementById('s-matched').textContent  =projects.length.toLocaleString();
+  document.getElementById('s-fund').textContent     =fmtEuro(fund);
+  document.getElementById('s-fund-total').textContent=fmtEuro(totalFund);
+  document.getElementById('s-fund-pct').textContent =`${fundPct}%`;
+  document.getElementById('s-excluded').textContent =excludedIds.size.toString();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// NL ORGS BUILDER
+// ══════════════════════════════════════════════════════════════════════════
+function buildNLOrgs(projects) {
+  const orgs = new Map();
+  for(const p of projects){
+    for(const m of (p.project_members||[])){
+      // For NWO: all orgs are NL. For EU: check country
+      const isNLOrg = p._src==='nwo' || NL_CODES.has((m.country||'').toUpperCase());
+      if(!isNLOrg) continue;
+      const name=(m.organisation||m.name||'').split('||')[0].trim();
+      if(!name) continue;
+      if(!orgs.has(name)) orgs.set(name,{piCount:0,ptCount:0,progs:new Set(),pids:new Set(),totalFund:0});
+      const o=orgs.get(name);
+      isCoord(m.role,p._src) ? o.piCount++ : o.ptCount++;
+      o.progs.add(p._progKey);
+      o.pids.add(p.project_id);
+      o.totalFund += (p.ec_grant_num||0) / Math.max(1,(p.project_members||[]).length); // approx share
+    }
+  }
+  return orgs;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// NL ORGS PANEL
+// ══════════════════════════════════════════════════════════════════════════
+function renderNLOrgs(projects) {
+  const orgs=buildNLOrgs(projects);
+  const sorted=[...orgs.entries()].sort((a,b)=>(b[1].piCount+b[1].ptCount)-(a[1].piCount+a[1].ptCount));
+
+  const total=sorted.length;
+  document.getElementById('nl-org-count').textContent =total;
+  document.getElementById('nl-org-count2').textContent=total+' orgs';
+
+  const list=document.getElementById('orgs-list');
+  list.innerHTML='';
+
+  const q=orgFilter.toLowerCase();
+  const visible=q?sorted.filter(([n])=>n.toLowerCase().includes(q)):sorted;
+
+  for(const [name,info] of visible){
+    const isPI=info.piCount>0, isPT=info.ptCount>0, isBoth=isPI&&isPT;
+    const ri=isBoth?'ri-both':isPI?'ri-pi':'ri-pt';
+    const rl=isBoth?'PI+PT':isPI?'PI':'PT';
+    const nc=isPI?'pi-name':'pt-name';
+    const bc=isPI?'org-pi':'org-pt';
+    const sel=selectedOrg===name?' selected':'';
+
+    const div=document.createElement('div');
+    div.className=`org-item ${bc}${sel}`;
+    div.innerHTML=`
+      <div style="display:flex;align-items:center;gap:5px">
+        <span class="role-indicator ${ri}">${rl}</span>
+        <span class="org-name ${nc}">${esc(name.slice(0,55))}</span>
+      </div>
+      <div class="org-stats">
+        ${isPI?`<span class="pi-cnt">PI: ${info.piCount}</span>`:''}
+        ${isPT?`<span class="pt-cnt">PT: ${info.ptCount}</span>`:''}
+        <span style="color:#d2a8ff">${fmtEuro(info.totalFund)}</span>
+        <span style="color:#484f58">${[...info.progs].map(k=>k==='nwo'?'NWO':k==='erasmus'?'E+':k==='h2020'?'H2020':'HE').join(' ')}</span>
+      </div>`;
+
+    div.addEventListener('click',()=>{
+      if(selectedOrg===name){ selectedOrg=null; orgFocusSet.clear(); }
+      else { selectedOrg=name; orgFocusSet=new Set(info.pids); }
+      updateProjList(projects);
+      renderNLOrgs(projects);
+      applyGraphHighlight();
+    });
+    list.appendChild(div);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// PROJECT LIST PANEL
+// ══════════════════════════════════════════════════════════════════════════
+function updateProjList(projects) {
+  document.getElementById('proj-count').textContent=projects.length.toLocaleString();
+  const list=document.getElementById('proj-list');
+  list.innerHTML='';
+
+  const focus = orgFocusSet.size>0 ? orgFocusSet : highlightSet;
+
+  const sorted=[...projects].sort((a,b)=>{
+    const am=focus.has(a.project_id), bm=focus.has(b.project_id);
+    if(am&&!bm) return -1; if(!am&&bm) return 1;
+    return (a._display_name||a.title_en||'').localeCompare(b._display_name||b.title_en||'');
+  });
+
+  const MAX=800;
+  sorted.slice(0,MAX).forEach(p=>{
+    const inFocus=focus.has(p.project_id);
+    const inSearch=highlightSet.size>0&&highlightSet.has(p.project_id);
+    const div=document.createElement('div');
+    let cls='proj-item';
+    if(inSearch) cls+=' highlighted';
+    div.className=cls;
+
+    const pk=p._progKey;
+    const bc=pk==='nwo'?'nwo':pk==='erasmus'?'erasmus':pk==='h2020'?'h2020':'he';
+    const bl=pk==='nwo'?'NWO':pk==='erasmus'?'E+':pk==='h2020'?'H2020':'HE';
+    const grant=p.ec_grant_num?fmtEuro(p.ec_grant_num):'';
+    const yr=projectYear(p);
+    const piName=getPIName(p);
+    const piInst=getPIInstitution(p);
+    const kws=(p._matched_terms||[]).filter(k=>activeKw.has(k)).slice(0,5);
+    const dn=p._display_name||p.title_en||'';
+
+    // Exclude checkbox
+    const cb=document.createElement('input');
+    cb.type='checkbox';
+    cb.className='excl-cb';
+    cb.checked=true;
+    cb.title='Uncheck to exclude this project';
+    cb.addEventListener('change',(e)=>{
+      e.stopPropagation();
+      if(!cb.checked){
+        excludedIds.add(p.project_id);
+        div.classList.add('excluded');
+      } else {
+        excludedIds.delete(p.project_id);
+        div.classList.remove('excluded');
+      }
+      // Update stats but don't full re-render (expensive)
+      const fp=filteredProjects();
+      updateStats(fp);
+    });
+
+    const content=document.createElement('div');
+    content.className='proj-content';
+    content.innerHTML=`
+      <div class="proj-title">${esc(dn)}</div>
+      ${piName?`<div class="proj-pi">PI: ${esc(piName)}${piInst?' — '+esc(piInst.slice(0,40)):''}</div>`:''}
+      ${kws.length?`<div class="proj-kws">${kws.map(k=>esc(k)).join(' · ')}</div>`:''}
+      <div class="proj-meta">
+        <span class="prog-badge ${bc}">${bl}</span>
+        ${yr?`<span style="color:#484f58">${yr}</span>`:''}
+        ${grant?`<span style="color:#d2a8ff">${grant}</span>`:''}
+      </div>`;
+    content.addEventListener('click',()=>{
+      const url=p.project_page_url||p.project_website;
+      if(url) window.open(url,'_blank');
+    });
+
+    div.appendChild(cb);
+    div.appendChild(content);
+    list.appendChild(div);
+  });
+  if(sorted.length>MAX){
+    const n=document.createElement('div');
+    n.style.cssText='padding:5px 10px;font-size:10px;color:#484f58;text-align:center';
+    n.textContent=`+${(sorted.length-MAX).toLocaleString()} more — refine keywords`;
+    list.appendChild(n);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// SEARCH
+// ══════════════════════════════════════════════════════════════════════════
+function applySearch(projects) {
+  if(!searchTerm){highlightSet.clear();return;}
+  const q=searchTerm.toLowerCase();
+  highlightSet=new Set(
+    projects.filter(p=>
+      (p._display_name||'').toLowerCase().includes(q)||
+      (p.title_en||'').toLowerCase().includes(q)||
+      (p._pi_institution||'').toLowerCase().includes(q)||
+      (p._pi_name||'').toLowerCase().includes(q)||
+      (p.objective||p.summary_en||'').toLowerCase().includes(q)
+    ).map(p=>p.project_id)
+  );
+  document.getElementById('searchBox').classList.toggle('has-match',highlightSet.size>0);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// D3 GRAPH
+// ══════════════════════════════════════════════════════════════════════════
+const svg=d3.select('#graph-svg');
+const g  =svg.append('g');
+const zoomBehavior=d3.zoom().scaleExtent([0.02,12])
+  .on('zoom',e=>g.attr('transform',e.transform));
+svg.call(zoomBehavior);
+
+svg.on('click',()=>{
+  if(pinnedNode){ pinnedNode=null; applyHoverHighlight(null); }
+});
+
+let _nodeSel=null, _linkSel=null, _labelSel=null, _projLabelSel=null;
+
+function getWH(){ const el=document.getElementById('canvas-wrap'); return [el.clientWidth,el.clientHeight]; }
+
+function fitView(nodes){
+  if(!nodes||!nodes.length) return;
+  const [W,H]=getWH();
+  const xs=nodes.map(n=>n.x),ys=nodes.map(n=>n.y);
+  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const ew=x1-x0||1,eh=y1-y0||1;
+  const sc=Math.min(0.86*W/ew,0.86*H/eh,5);
+  svg.transition().duration(700)
+    .call(zoomBehavior.transform,d3.zoomIdentity
+      .translate(W/2-sc*(x0+ew/2), H/2-sc*(y0+eh/2)).scale(sc));
+}
+
+function applyGraphHighlight(){
+  if(!_nodeSel||!_linkSel) return;
+  const focus=orgFocusSet.size>0?orgFocusSet:highlightSet;
+  const hasHL=focus.size>0;
+
+  _nodeSel.classed('dimmed', d=>{
+    if(!hasHL) return false;
+    if(d.type==='project') return !focus.has(d.data?.project_id);
+    return false;
+  }).classed('lit', d=>{
+    if(d.type!=='project') return false;
+    return hasHL && highlightSet.has(d.data?.project_id);
+  }).classed('org-glow', d=>{
+    if(d.type!=='org') return false;
+    return hasHL && orgFocusSet.size>0 && d.label===selectedOrg;
+  });
+
+  _linkSel.classed('dimmed', d=>{
+    if(!hasHL) return false;
+    const srcId=d.source.data?.project_id||d.source.id;
+    return !focus.has(srcId);
+  }).classed('link-hi', d=>{
+    if(!hasHL) return false;
+    const srcId=d.source.data?.project_id||d.source.id;
+    return focus.has(srcId);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// NODE SIZING — projects by funding, orgs by attracted funding
+// ══════════════════════════════════════════════════════════════════════════
+function projectRadius(p) {
+  const f=p.ec_grant_num||0;
+  if(f<=0) return 4;  // NWO or no-funding default
+  // sqrt scale: €100K=5, €1M=8, €10M=14, €100M=22
+  return Math.max(3, Math.min(2.5 + Math.sqrt(f/50000), 26));
+}
+
+function orgRadius(totalFund, count) {
+  if(totalFund<=0) return Math.min(3 + Math.sqrt(count)*1.2, 14);
+  return Math.max(3, Math.min(2.5 + Math.sqrt(totalFund/40000), 28));
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// GRAPH BUILDER
+// ══════════════════════════════════════════════════════════════════════════
+function buildGraph(projects){
+  const [W,H]=getWH();
+  const nodes=[],links=[];
+  const nm=new Map();
+  const orgFunding=new Map(); // orgName → total funding share
+  const capped=projects.slice(0,MAX_PROJ_GRAPH);
+
+  // First pass: accumulate org funding
+  capped.forEach(p=>{
+    const members=p.project_members||[];
+    const share=(p.ec_grant_num||0)/Math.max(1,members.length);
+    members.forEach(m=>{
+      const orgName=(m.organisation||m.name||'').split('||')[0].trim();
+      if(!orgName) return;
+      orgFunding.set(orgName, (orgFunding.get(orgName)||0) + share);
+    });
+  });
+
+  capped.forEach(p=>{
+    const pid=`proj:${p.project_id||p.title_en}`;
+    if(!nm.has(pid)){
+      const n={id:pid,type:'project',pk:p._progKey,data:p,
+        r:projectRadius(p),
+        x:W/2+(Math.random()-.5)*240,y:H/2+(Math.random()-.5)*240};
+      nodes.push(n); nm.set(pid,n);
+    }
+    const members=p.project_members||[];
+    const coord=members.find(m=>isCoord(m.role, p._src));
+    const partners=members.filter(m=>!isCoord(m.role, p._src)).slice(0,MAX_PARTNERS_PP);
+
+    const addOrg=(orgRaw,role,country)=>{
+      const orgName=(orgRaw||'').split('||')[0].trim();
+      if(!orgName) return null;
+      const oid=`org:${orgName}`;
+      const orgIsNL= p._src==='nwo' || NL_CODES.has((country||'').toUpperCase());
+      if(!nm.has(oid)){
+        const tf=orgFunding.get(orgName)||0;
+        const on={id:oid,type:'org',label:orgName,isCoord:role==='coord',
+          isNL:orgIsNL,count:0,totalFund:tf,
+          r:orgRadius(tf,1),
+          x:W/2+(Math.random()-.5)*320,y:H/2+(Math.random()-.5)*320};
+        nodes.push(on); nm.set(oid,on);
+      }
+      const on=nm.get(oid);
+      on.count++;
+      on.r=orgRadius(on.totalFund, on.count);
+      if(role==='coord') on.isCoord=true;
+      if(orgIsNL) on.isNL=true;
+      return oid;
+    };
+
+    if(coord){
+      const oid=addOrg(coord.organisation||coord.name,'coord',coord.country);
+      if(oid) links.push({source:pid,target:oid,role:'pi'});
+    }
+    for(const pt of partners){
+      const oid=addOrg(pt.organisation||pt.name,'partner',pt.country);
+      if(oid) links.push({source:pid,target:oid,role:'partner'});
+    }
+  });
+  return {nodes,links};
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// HOVER / PIN HIGHLIGHT
+// ══════════════════════════════════════════════════════════════════════════
+function buildAdjacency(links){
+  neighborMap=new Map();
+  links.forEach(l=>{
+    const s=typeof l.source==='object'?l.source.id:l.source;
+    const t=typeof l.target==='object'?l.target.id:l.target;
+    if(!neighborMap.has(s)) neighborMap.set(s,new Set());
+    if(!neighborMap.has(t)) neighborMap.set(t,new Set());
+    neighborMap.get(s).add(t);
+    neighborMap.get(t).add(s);
+  });
+}
+
+function applyHoverPreview(focusDatum){
+  if(!_nodeSel||!_linkSel) return;
+  if(!focusDatum){
+    _linkSel.classed('h-lit',false);
+    _nodeSel.classed('h-pin',false);
+    return;
+  }
+  const fid=focusDatum.id;
+  _linkSel.classed('h-lit',d=>{
+    const s=typeof d.source==='object'?d.source.id:d.source;
+    const t=typeof d.target==='object'?d.target.id:d.target;
+    return s===fid||t===fid;
+  });
+  _nodeSel.classed('h-pin', d=> d===focusDatum);
+}
+
+function updatePinLabels(focusDatum){
+  if(!_labelSel||!_projLabelSel) return;
+  if(!focusDatum){
+    _labelSel.style('display', showLabels ? null : 'none');
+    _projLabelSel.style('display', 'none');
+    return;
+  }
+  const fid=focusDatum.id;
+  const nbrs=neighborMap.get(fid)||new Set();
+  _labelSel.style('display', d=>{
+    if(showLabels) return null;
+    return nbrs.has(d.id) ? null : 'none';
+  });
+  _projLabelSel.style('display', d=> d.id===fid ? null : 'none');
+}
+
+function applyHoverHighlight(focusDatum){
+  if(!_nodeSel||!_linkSel) return;
+  if(!focusDatum){
+    _nodeSel.classed('h-dim',false).classed('h-lit',false).classed('h-pin',false);
+    _linkSel.classed('h-dim',false).classed('h-lit',false);
+    updatePinLabels(null);
+    return;
+  }
+  const fid=focusDatum.id;
+  const nbrs=neighborMap.get(fid)||new Set();
+  _nodeSel
+    .classed('h-lit', d=> d.id===fid || nbrs.has(d.id))
+    .classed('h-dim', d=> d.id!==fid && !nbrs.has(d.id))
+    .classed('h-pin', d=> d===pinnedNode);
+  _linkSel.classed('h-lit',d=>{
+    const s=typeof d.source==='object'?d.source.id:d.source;
+    const t=typeof d.target==='object'?d.target.id:d.target;
+    return s===fid||t===fid;
+  }).classed('h-dim',d=>{
+    const s=typeof d.source==='object'?d.source.id:d.source;
+    const t=typeof d.target==='object'?d.target.id:d.target;
+    return s!==fid&&t!==fid;
+  });
+  updatePinLabels(focusDatum);
+}
+
+function clearHoverHighlight(){
+  if(pinnedNode) return;
+  applyHoverPreview(null);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════════════════════════════════
+function render(){
+  const projects=filteredProjects();
+  applySearch(projects);
+  updateStats(projects);
+  updateProjList(projects);
+  renderKeywords();
+  if(activePanel==='orgs') renderNLOrgs(projects);
+
+  if(simulation) simulation.stop();
+  g.selectAll('*').remove();
+  _nodeSel=null; _linkSel=null;
+  pinnedNode=null;
+  neighborMap=new Map();
+  if(!projects.length) return;
+
+  const [W,H]=getWH();
+  const {nodes,links}=buildGraph(projects);
+  if(!nodes.length) return;
+
+  buildAdjacency(links);
+
+  const linkSel=g.append('g').selectAll('line').data(links).enter()
+    .append('line')
+    .attr('class',d=>`link ${d.role==='pi'?'link-pi':'link-partner'}`);
+
+  const nodeSel=g.append('g').selectAll('circle').data(nodes).enter()
+    .append('circle')
+    .attr('r', d=> d.r || 5)
+    .attr('class',d=>{
+      if(d.type==='project'){
+        const nc=d.pk==='nwo'?'node-nwo':d.pk==='erasmus'?'node-erasmus':d.pk==='h2020'?'node-h2020':'node-he';
+        return `node-proj ${nc}`;
+      }
+      return `node-org ${d.isNL?'node-org-nl':'node-org-other'}`;
+    })
+    .call(d3.drag()
+      .on('start',(e,d)=>{if(!e.active)simulation.alphaTarget(0.2).restart();d.fx=d.x;d.fy=d.y;})
+      .on('drag', (e,d)=>{d.fx=e.x;d.fy=e.y;})
+      .on('end',  (e,d)=>{if(!e.active)simulation.alphaTarget(0);d.fx=null;d.fy=null;})
+    )
+    .on('mouseover',(e,d)=>{
+      showTT(e,d);
+      if(!pinnedNode) applyHoverPreview(d);
+    })
+    .on('mousemove', moveTT)
+    .on('mouseout', ()=>{
+      hideTT();
+      clearHoverHighlight();
+    })
+    .on('click',(e,d)=>{
+      e.stopPropagation();
+      if(pinnedNode===d){
+        pinnedNode=null;
+        applyHoverHighlight(null);
+      } else {
+        pinnedNode=d;
+        applyHoverHighlight(d);
+      }
+    });
+
+  // Org labels
+  const labelSel=g.append('g').selectAll('text')
+    .data(nodes.filter(d=>d.type!=='project'))
+    .enter().append('text')
+    .text(d=>(d.label||d.id).slice(0,32))
+    .attr('font-size',9)
+    .attr('fill',d=>d.isNL?'#fb923c':'#60a5fa')
+    .attr('text-anchor','middle')
+    .attr('dy',d=>-(d.r+3))
+    .style('pointer-events','none')
+    .style('user-select','none')
+    .style('display', showLabels ? null : 'none');
+
+  // Project labels (pinned only)
+  const projLabelSel=g.append('g').selectAll('text')
+    .data(nodes.filter(d=>d.type==='project'))
+    .enter().append('text')
+    .text(d=>(d.data?._display_name||d.data?.title_en||'').slice(0,36))
+    .attr('font-size',8)
+    .attr('fill',d=>{
+      const pk=d.pk;
+      if(pk==='nwo') return '#a78bfa';
+      if(pk==='erasmus') return '#3fb950';
+      if(pk==='h2020') return '#58a6ff';
+      return '#79c0ff';
+    })
+    .attr('text-anchor','middle')
+    .attr('dy',d=>-(d.r+3))
+    .style('pointer-events','none')
+    .style('user-select','none')
+    .style('display','none');
+
+  _nodeSel=nodeSel; _linkSel=linkSel; _labelSel=labelSel; _projLabelSel=projLabelSel;
+  applyGraphHighlight();
+
+  simulation=d3.forceSimulation(nodes)
+    .force('link',d3.forceLink(links).id(d=>d.id)
+      .distance(d=>d.source.type==='project'?60:45).strength(0.3))
+    .force('charge',d3.forceManyBody()
+      .strength(d=>d.type==='project'?-60:-40).distanceMax(350))
+    .force('collide',d3.forceCollide(d=>(d.r||5)+2))
+    .force('center',d3.forceCenter(W/2,H/2).strength(0.05))
+    .force('x',d3.forceX(W/2).strength(0.04))
+    .force('y',d3.forceY(H/2).strength(0.04))
+    .alphaDecay(0.022)
+    .on('tick',()=>{
+      linkSel.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
+             .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+      nodeSel.attr('cx',d=>d.x).attr('cy',d=>d.y);
+      labelSel.attr('x',d=>d.x).attr('y',d=>d.y);
+      projLabelSel.attr('x',d=>d.x).attr('y',d=>d.y);
+    })
+    .on('end',()=>fitView(nodes));
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// TOOLTIP
+// ══════════════════════════════════════════════════════════════════════════
+const ttEl=document.getElementById('tt');
+function showTT(e,d){
+  let h='';
+  if(d.type==='project'){
+    const p=d.data;
+    const members=p.project_members||[];
+    const coord=members.find(m=>isCoord(m.role,p._src));
+    const partners=members.filter(m=>!isCoord(m.role,p._src)).slice(0,4);
+    const nlParts=members.filter(m=> p._src==='nwo' || NL_CODES.has((m.country||'').toUpperCase()));
+    const grant=p.ec_grant_num?fmtEuro(p.ec_grant_num):'';
+    const kws=(p._matched_terms||[]).filter(k=>activeKw.has(k));
+    const pyr=projectYear(p);
+    const dn=p._display_name||p.title_en||'';
+    const fullTitle=(dn!==p.title_en&&p.title_en)?p.title_en.slice(0,110):'';
+    const piName=getPIName(p);
+    const piInst=getPIInstitution(p);
+    const srcLabel=p._src==='nwo'?'NWO/SIA':(p.programme||p._src);
+    h=`<div class="tth">${esc(dn)}</div>
+       ${fullTitle?`<div class="tts" style="font-style:italic;margin-bottom:2px">${esc(fullTitle)}</div>`:''}
+       <div class="tts">${esc(srcLabel)} ${pyr?`· <b style="color:#e6edf3">${pyr}</b>`:''} ${grant?`· <span class="ttg">${grant}</span>`:''}</div>
+       ${piName?`<div class="tts" style="margin-top:3px">PI: <b style="color:#e3b341">${esc(piName)}</b>${piInst?' — '+esc(piInst.slice(0,45)):''}</div>`:''}
+       ${coord&&!piName?`<div class="tts" style="margin-top:3px">Coord: <b style="color:#e3b341">${esc((coord.organisation||coord.name||'').slice(0,55))}</b></div>`:''}
+       ${partners.length?`<div class="tts">Partners: ${partners.map(m=>esc((m.organisation||m.name||'').split('||')[0].slice(0,28))).join(', ')}</div>`:''}
+       ${kws.length?`<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px">${kws.map(k=>`<span style="background:#1a2040;color:#79c0ff;font-size:9px;padding:1px 5px;border-radius:10px;border:1px solid #2d3a6b">${esc(k)}</span>`).join('')}</div>`:''}
+       ${p.project_page_url?`<div style="margin-top:5px"><a href="${p.project_page_url}" target="_blank">Open project page</a></div>`:''}`;
+  } else {
+    h=`<div class="tth" style="color:${d.isNL?'#fb923c':'#60a5fa'}">${esc(d.label)}</div>
+       <div class="tts">${d.isNL?'🇳🇱 NL org':'🌍 Non-NL org'} · ${d.isCoord?'PI/Coordinator':'Partner'} · ${d.count} project${d.count!==1?'s':''}</div>
+       <div class="tts" style="color:#d2a8ff">${fmtEuro(d.totalFund||0)} funding share</div>`;
+  }
+  ttEl.innerHTML=h; ttEl.style.display='block'; moveTT(e);
+}
+function moveTT(e){
+  ttEl.style.left=Math.min(e.clientX+14,window.innerWidth-330)+'px';
+  ttEl.style.top =Math.min(e.clientY-10,window.innerHeight-150)+'px';
+}
+function hideTT(){ ttEl.style.display='none'; }
+
+// ══════════════════════════════════════════════════════════════════════════
+// CSV DOWNLOAD
+// ══════════════════════════════════════════════════════════════════════════
+document.getElementById('downloadBtn').addEventListener('click',()=>{
+  const projs=filteredProjects();
+  const cols=['project_id','title_en','_src','programme','funding_scheme','start_date','end_date',
+              '_pi_name','_pi_institution','ec_grant','status','project_page_url','_matched_terms'];
+  const rows=[cols.join(',')];
+  projs.forEach(p=>rows.push(
+    cols.map(c=>`"${(c==='_matched_terms'?(p[c]||[]).join('|'):String(p[c]||'')).replace(/"/g,'""')}"`).join(',')
+  ));
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));
+  a.download=`nl_textile_funding_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+});
+
+// Reset excluded
+document.getElementById('resetExclBtn').addEventListener('click',()=>{
+  excludedIds.clear();
+  render();
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// PANEL TABS
+// ══════════════════════════════════════════════════════════════════════════
+document.querySelectorAll('.ptab').forEach(tab=>tab.addEventListener('click',()=>{
+  document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');
+  activePanel=tab.dataset.panel;
+  document.getElementById('proj-pane').style.display=activePanel==='proj'?'flex':'none';
+  const op=document.getElementById('orgs-pane');
+  op.style.display=activePanel==='orgs'?'flex':'none';
+  if(activePanel==='orgs') renderNLOrgs(filteredProjects());
+}));
+
+// ══════════════════════════════════════════════════════════════════════════
+// CONTROLS
+// ══════════════════════════════════════════════════════════════════════════
+document.querySelectorAll('[data-prog]').forEach(btn=>btn.addEventListener('click',()=>{
+  const p=btn.dataset.prog;
+  activeProgs.has(p)?(activeProgs.delete(p),btn.classList.remove('active')):(activeProgs.add(p),btn.classList.add('active'));
+  renderKeywords(); render();
+}));
+
+document.getElementById('btnAll').addEventListener('click',()=>{allKwSet().forEach(k=>activeKw.add(k));renderKeywords();render();});
+document.getElementById('btnNone').addEventListener('click',()=>{activeKw.clear();renderKeywords();render();});
+
+const newKwIn=document.getElementById('newKwIn');
+document.getElementById('addKwBtn').addEventListener('click',()=>{
+  const kw=newKwIn.value.trim().toLowerCase();
+  if(!kw) return; newKwIn.value='';
+  activeKw.add(kw); DEFAULT_KEYWORDS.push(kw);
+  allProjects.forEach(p=>{
+    const t=(p._hay||'').toLowerCase();
+    if(t.includes(kw)&&!(p._matched_terms||[]).includes(kw))
+      p._matched_terms=[...(p._matched_terms||[]),kw];
+  });
+  renderKeywords(); render();
+});
+newKwIn.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('addKwBtn').click();});
+
+// Search
+const sbEl=document.getElementById('searchBox');
+const scEl=document.getElementById('searchClear');
+let searchTimer;
+sbEl.addEventListener('input',e=>{
+  clearTimeout(searchTimer);
+  searchTimer=setTimeout(()=>{
+    searchTerm=e.target.value.trim();
+    searchLocked=false;
+    scEl.classList.toggle('visible',!!searchTerm);
+    const projs=filteredProjects();
+    applySearch(projs);
+    updateProjList(projs);
+    applyGraphHighlight();
+  },250);
+});
+sbEl.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    searchTerm=sbEl.value.trim(); searchLocked=true;
+    scEl.classList.toggle('visible',!!searchTerm);
+    render();
+  }
+  if(e.key==='Escape') scEl.click();
+});
+scEl.addEventListener('click',()=>{
+  sbEl.value=''; searchTerm=''; searchLocked=false;
+  highlightSet.clear(); scEl.classList.remove('visible');
+  sbEl.classList.remove('has-match');
+  applyGraphHighlight();
+  updateProjList(filteredProjects());
+});
+
+// ── Year range sliders ──────────────────────────────────────────────────
+(function(){
+  const fromEl=document.getElementById('yrFrom');
+  const toEl  =document.getElementById('yrTo');
+  const fillEl=document.getElementById('yrFill');
+  const valsEl=document.getElementById('yrVals');
+  const MIN=2010, MAX=2027;
+
+  function updateFill(){
+    const lo=(fromEl.value-MIN)/(MAX-MIN)*100;
+    const hi=(toEl.value  -MIN)/(MAX-MIN)*100;
+    fillEl.style.left  = lo+'%';
+    fillEl.style.width = (hi-lo)+'%';
+    valsEl.textContent = `${fromEl.value} – ${toEl.value}`;
+  }
+  function onSlider(){
+    if(+fromEl.value > +toEl.value){
+      if(this===fromEl) fromEl.value=toEl.value;
+      else              toEl.value=fromEl.value;
+    }
+    yearMin=+fromEl.value;
+    yearMax=+toEl.value;
+    updateFill();
+    render();
+  }
+  fromEl.addEventListener('input', onSlider);
+  toEl  .addEventListener('input', onSlider);
+  updateFill();
+})();
+
+// Labels toggle
+document.getElementById('labelsToggle').addEventListener('change',e=>{
+  showLabels=e.target.checked;
+  if(pinnedNode){
+    updatePinLabels(pinnedNode);
+  } else {
+    if(_labelSel)     _labelSel.style('display', showLabels ? null : 'none');
+    if(_projLabelSel) _projLabelSel.style('display', 'none');
+  }
+});
+
+// Org search filter
+document.getElementById('orgSearchIn').addEventListener('input',e=>{
+  orgFilter=e.target.value.trim();
+  renderNLOrgs(filteredProjects());
+});
+
+window.addEventListener('resize',()=>{ if(simulation) fitView(simulation.nodes()); });
+
+// ══════════════════════════════════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════════════════════════════════
+document.getElementById('orgs-pane').style.display='none';
+loadData();
+</script>
+</body>
+</html>
