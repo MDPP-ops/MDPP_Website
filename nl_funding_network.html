@@ -345,6 +345,142 @@ const MAX_PARTNERS_PP = 6;
 const ORG_LABEL_MIN   = 3;   // minimum weighted project count to show org label in main view
 
 // ══════════════════════════════════════════════════════════════════════════
+// ORGANISATION NAME NORMALISATION
+// ══════════════════════════════════════════════════════════════════════════
+// Explicit alias map: lowercased key → canonical display name
+// Handles word-order, abbreviation, and language variants that algorithmic
+// stripping cannot resolve.
+const ORG_ALIASES = new Map([
+  // === Universities ===
+  ['technische universiteit eindhoven', 'Technische Universiteit Eindhoven'],
+  ['technische universiteit eindhoven - eindhoven university of technology', 'Technische Universiteit Eindhoven'],
+  ['eindhoven university of technology', 'Technische Universiteit Eindhoven'],
+  ['wageningen university', 'Wageningen University & Research'],
+  ['wageningen university & research', 'Wageningen University & Research'],
+  ['stichting wageningen research', 'Wageningen University & Research'],
+  ['vrije universiteit amsterdam', 'Vrije Universiteit Amsterdam'],
+  ['stichting vu', 'Vrije Universiteit Amsterdam'],
+  ['universiteit van amsterdam', 'Universiteit van Amsterdam'],
+  ['academisch medisch centrum bij de universiteit van amsterdam', 'Amsterdam UMC'],
+  ['stichting amsterdam umc', 'Amsterdam UMC'],
+  ['amsterdam umc', 'Amsterdam UMC'],
+  ['radboud universiteit nijmegen', 'Radboud Universiteit'],
+  ['stichting radboud universiteit', 'Radboud Universiteit'],
+  ['radboud universitair medisch centrum', 'Radboud UMC'],
+  ['stichting radboud universitair medisch centrum', 'Radboud UMC'],
+  ['universiteit maastricht', 'Maastricht University'],
+  ['maastricht university', 'Maastricht University'],
+  ['tilburg university', 'Tilburg University'],
+  ['tilburg university- universiteit van tilburg', 'Tilburg University'],
+  ['erasmus universiteit rotterdam', 'Erasmus Universiteit Rotterdam'],
+  ['erasmus universitair medisch centrum rotterdam', 'Erasmus MC'],
+  ['universitair medisch centrum utrecht', 'UMC Utrecht'],
+  ['academisch ziekenhuis leiden', 'LUMC'],
+  // === TNO ===
+  ['nederlandse organisatie voor toegepast natuurwetenschappelijk onderzoek tno', 'TNO'],
+  ['tno', 'TNO'], ['tno leiden', 'TNO'], ['tno delft', 'TNO'], ['tno den haag', 'TNO'],
+  ['tno utrecht', 'TNO'], ['tno soesterberg', 'TNO'], ['tno rijswijk', 'TNO'],
+  ['tno helmond', 'TNO'], ['tno (former ecn)', 'TNO'],
+  // === Hogescholen ===
+  ['hogeschool van amsterdam', 'Hogeschool van Amsterdam'],
+  ['stichting hogeschool van amsterdam', 'Hogeschool van Amsterdam'],
+  ['hogeschool utrecht', 'Hogeschool Utrecht'],
+  ['stichting hogeschool utrecht', 'Hogeschool Utrecht'],
+  ['hanzehogeschool groningen', 'Hanzehogeschool Groningen'],
+  ['stichting hanzehogeschool groningen', 'Hanzehogeschool Groningen'],
+  ['saxion hogeschool', 'Saxion Hogeschool'],
+  ['saxion hogescholen', 'Saxion Hogeschool'],
+  ['stichting saxion', 'Saxion Hogeschool'],
+  ['fontys hogeschool', 'Fontys Hogeschool'],
+  ['stichting fontys', 'Fontys Hogeschool'],
+  ['fontys, greentechlab', 'Fontys Hogeschool'],
+  ['hogeschool rotterdam - rotterdam university of applied sciences', 'Hogeschool Rotterdam'],
+  ['stichting hogeschool rotterdam', 'Hogeschool Rotterdam'],
+  ['nhl stenden hogeschool', 'NHL Stenden Hogeschool'],
+  ['stichting nhl stenden hogeschool', 'NHL Stenden Hogeschool'],
+  ['hogeschool windesheim', 'Hogeschool Windesheim'],
+  ['stichting christelijke hogeschool windesheim', 'Hogeschool Windesheim'],
+  ['zuyd hogeschool', 'Zuyd Hogeschool'],
+  ['stichting zuyd hogeschool', 'Zuyd Hogeschool'],
+  ['hz university of applied sciences', 'HZ University of Applied Sciences'],
+  ['stichting hz university of applied sciences', 'HZ University of Applied Sciences'],
+  ['de haagse hogeschool (hhs)', 'De Haagse Hogeschool'],
+  ['breda university of applied sciences', 'Breda University of Applied Sciences'],
+  ['stichting breda university of applied sciences', 'Breda University of Applied Sciences'],
+  ['hogeschool leiden', 'Hogeschool Leiden'],
+  ['hogeschool voor de kunsten utrecht', 'HKU'],
+  ['stichting hogeschool voor de kunsten utrecht', 'HKU'],
+  ['amsterdamse hogeschool voor de kunsten', 'AHK'],
+  ['stichting amsterdamse hogeschool voor de kunsten', 'AHK'],
+  ['codarts rotterdam - hogeschool voor de kunsten', 'Codarts Rotterdam'],
+  ['stichting artez', 'ArtEZ'],
+  ['stichting stc-group', 'STC-Group'],
+  // === Inholland (multiple locations → single org) ===
+  ['hogeschool inholland amsterdam (sluisbuurt)', 'Hogeschool Inholland'],
+  ['hogeschool inholland haarlem', 'Hogeschool Inholland'],
+  ['hogeschool inholland den haag', 'Hogeschool Inholland'],
+  ['hogeschool inholland alkmaar', 'Hogeschool Inholland'],
+  ['hogeschool inholland delft', 'Hogeschool Inholland'],
+  ['hogeschool inholland rotterdam', 'Hogeschool Inholland'],
+  ['hogeschool inholland dordrecht', 'Hogeschool Inholland'],
+  // === Research institutes & other ===
+  ['stichting deltares', 'Deltares'], ['deltares', 'Deltares'],
+  ['stichting naturalis biodiversity center', 'Naturalis'],
+  ['stichting ihe delft institute for water education', 'IHE Delft'],
+  ['ihe delft institute for water education', 'IHE Delft'],
+  ['seo economisch onderzoek', 'SEO Economisch Onderzoek'],
+  ['stichting seo economisch onderzoek', 'SEO Economisch Onderzoek'],
+  ['stichting aeres groep', 'Aeres Groep'], ['aeres groep', 'Aeres Groep'],
+  ['stichting new energy coalition', 'New Energy Coalition'],
+  ['new energy coalition', 'New Energy Coalition'],
+  ['stichting louis bolk instituut', 'Louis Bolk Instituut'],
+  ['louis bolk instituut', 'Louis Bolk Instituut'],
+  ['stichting roc midden nederland', 'ROC Midden Nederland'],
+  ['roc midden nederland', 'ROC Midden Nederland'],
+  ['gemeente amsterdam', 'Gemeente Amsterdam'],
+  ['rijksinstituut voor volksgezondheid en milieu', 'RIVM'],
+  ['ministerie van infrastructuur en waterstaat', 'Min. I&W'],
+]);
+
+// Algorithmic fallback: strip Dutch legal prefixes/suffixes, normalise case
+function normaliseOrgName(raw) {
+  if(!raw) return '';
+  // First try: exact match in alias map (case-insensitive)
+  const key = raw.toLowerCase().trim();
+  if(ORG_ALIASES.has(key)) return ORG_ALIASES.get(key);
+
+  let n = raw.trim();
+  // Strip common legal prefixes (case-insensitive check, preserve rest of casing)
+  const prefixes = ['Stichting ','STICHTING ','Coöperatie ','COÖPERATIE ',
+                    'Coöperatieve ','COÖPERATIEVE ','Vereniging ','VERENIGING '];
+  for(const pfx of prefixes){
+    if(n.startsWith(pfx) || n.toUpperCase().startsWith(pfx.toUpperCase())){
+      n = n.slice(pfx.length);
+      break;
+    }
+  }
+  // Strip legal suffixes
+  const lower = n.toLowerCase();
+  for(const sfx of [' b.v.',' bv',' b.v',' n.v.',' nv',' cv',' vof']){
+    if(lower.endsWith(sfx)){ n = n.slice(0, -sfx.length); break; }
+  }
+  // If ALL-CAPS (EU databases), convert to title case
+  if(n === n.toUpperCase() && n.length > 4){
+    n = n.replace(/\w\S*/g, w => {
+      // Keep short connectors lowercase
+      const lo = w.toLowerCase();
+      if(['van','de','het','der','voor','en','bij','te','tot','op','in','uit'].includes(lo))
+        return lo;
+      return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+    });
+  }
+  // Re-check alias map after stripping
+  const key2 = n.toLowerCase().trim();
+  if(ORG_ALIASES.has(key2)) return ORG_ALIASES.get(key2);
+  return n.trim();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════════════════════════════════
 let allProjects  = [];
@@ -467,12 +603,12 @@ function getPIName(p) {
 }
 
 function getPIInstitution(p) {
-  if(p._pi_institution) return p._pi_institution;
+  if(p._pi_institution) return normaliseOrgName(p._pi_institution);
   const members=p.project_members||[];
   for(const m of members) {
     const r=(m.role||'').toLowerCase().replace(/[_-]/g,' ').trim();
     if(COORD_ROLES_NWO.has(r) || COORD_ROLES_EU.has(r)) {
-      return (m.organisation||'').split('||')[0].trim();
+      return normaliseOrgName((m.organisation||'').split('||')[0].trim());
     }
   }
   return '';
@@ -641,8 +777,9 @@ function buildNLOrgs(projects) {
       // For NWO: all orgs are NL. For EU: check country
       const isNLOrg = p._src==='nwo' || NL_CODES.has((m.country||'').toUpperCase());
       if(!isNLOrg) continue;
-      const name=(m.organisation||m.name||'').split('||')[0].trim();
-      if(!name) continue;
+      const raw=(m.organisation||m.name||'').split('||')[0].trim();
+      if(!raw) continue;
+      const name=normaliseOrgName(raw);
       if(!orgs.has(name)) orgs.set(name,{piCount:0,ptCount:0,progs:new Set(),pids:new Set(),totalFund:0});
       const o=orgs.get(name);
       isCoord(m.role,p._src) ? o.piCount++ : o.ptCount++;
@@ -887,13 +1024,14 @@ function buildGraph(projects){
   const orgFunding=new Map(); // orgName → total funding share
   const capped=projects.slice(0,MAX_PROJ_GRAPH);
 
-  // First pass: accumulate org funding
+  // First pass: accumulate org funding (using normalised names)
   capped.forEach(p=>{
     const members=p.project_members||[];
     const share=(p.ec_grant_num||0)/Math.max(1,members.length);
     members.forEach(m=>{
-      const orgName=(m.organisation||m.name||'').split('||')[0].trim();
-      if(!orgName) return;
+      const raw=(m.organisation||m.name||'').split('||')[0].trim();
+      if(!raw) return;
+      const orgName=normaliseOrgName(raw);
       orgFunding.set(orgName, (orgFunding.get(orgName)||0) + share);
     });
   });
@@ -911,8 +1049,9 @@ function buildGraph(projects){
     const partners=members.filter(m=>!isCoord(m.role, p._src)).slice(0,MAX_PARTNERS_PP);
 
     const addOrg=(orgRaw,role,country)=>{
-      const orgName=(orgRaw||'').split('||')[0].trim();
-      if(!orgName) return null;
+      const raw=(orgRaw||'').split('||')[0].trim();
+      if(!raw) return null;
+      const orgName=normaliseOrgName(raw);
       const oid=`org:${orgName}`;
       const orgIsNL= p._src==='nwo' || NL_CODES.has((country||'').toUpperCase());
       if(!nm.has(oid)){
@@ -1186,8 +1325,8 @@ function showTT(e,d){
        ${fullTitle?`<div class="tts" style="font-style:italic;margin-bottom:2px">${esc(fullTitle)}</div>`:''}
        <div class="tts">${esc(srcLabel)} ${pyr?`· <b style="color:#e6edf3">${pyr}</b>`:''} ${grant?`· <span class="ttg">${grant}</span>`:''}</div>
        ${piName?`<div class="tts" style="margin-top:3px">PI: <b style="color:#e3b341">${esc(piName)}</b>${piInst?' — '+esc(piInst.slice(0,45)):''}</div>`:''}
-       ${coord&&!piName?`<div class="tts" style="margin-top:3px">Coord: <b style="color:#e3b341">${esc((coord.organisation||coord.name||'').slice(0,55))}</b></div>`:''}
-       ${partners.length?`<div class="tts">Partners: ${partners.map(m=>esc((m.organisation||m.name||'').split('||')[0].slice(0,28))).join(', ')}</div>`:''}
+       ${coord&&!piName?`<div class="tts" style="margin-top:3px">Coord: <b style="color:#e3b341">${esc(normaliseOrgName((coord.organisation||coord.name||'').split('||')[0]).slice(0,55))}</b></div>`:''}
+       ${partners.length?`<div class="tts">Partners: ${partners.map(m=>esc(normaliseOrgName((m.organisation||m.name||'').split('||')[0]).slice(0,28))).join(', ')}</div>`:''}
        ${kws.length?`<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px">${kws.map(k=>`<span style="background:#1a2040;color:#79c0ff;font-size:9px;padding:1px 5px;border-radius:10px;border:1px solid #2d3a6b">${esc(k)}</span>`).join('')}</div>`:''}
        ${p.project_page_url?`<div style="margin-top:5px"><a href="${p.project_page_url}" target="_blank">Open project page</a></div>`:''}`;
   } else {
