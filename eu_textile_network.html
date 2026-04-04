@@ -256,7 +256,7 @@ svg#graph-svg{cursor:default}
 
   <div class="stat s-count">DB: <b id="s-total">—</b></div>
   <div class="stat s-pct">Matched: <b id="s-matched">—</b> (<b id="s-pct">—</b>)</div>
-  <div class="stat s-fund">Funding: <b id="s-fund">—</b></div>
+  <div class="stat s-fund">Funding: <b id="s-fund">—</b> <span style="color:#8b949e;font-size:10px">of <b id="s-fund-total">—</b></span> (<b id="s-fund-pct" style="color:#d2a8ff">—</b>)</div>
   <div class="vsep"></div>
 
   <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#8b949e;cursor:pointer;white-space:nowrap;user-select:none">
@@ -374,6 +374,7 @@ const MAX_PARTNERS_PP = 6;
 // ══════════════════════════════════════════════════════════════════════════
 let allProjects  = [];
 let metaTotals   = { erasmus:0, cordis:0 };
+let metaFunding  = { erasmus:0, cordis:0, he:0, h2020:0 }; // total EC funding by source/programme
 let activeKw     = new Set(['garment','clothing','textile','footwear','shoes','leather','fashion']);
 let activeSrc    = 'both';
 let activeMode   = 'proj';
@@ -528,6 +529,14 @@ async function loadData() {
       allProjects.push(...projects);
     } catch(e){ console.warn(`Failed to load ${file}:`,e); }
   }
+  // Compute total funding per source and programme across ALL matched projects
+  for(const p of allProjects){
+    const f=p.ec_grant_num||0;
+    if(p._src==='erasmus') metaFunding.erasmus+=f;
+    else                   metaFunding.cordis +=f;
+    if(p._progKey==='he')       metaFunding.he   +=f;
+    else if(p._progKey==='h2020') metaFunding.h2020+=f;
+  }
   document.getElementById('loading').style.display='none';
   renderKeywords();
   render();
@@ -605,10 +614,18 @@ function updateStats(projects) {
   if(activeSrc==='cordis')  db=metaTotals.cordis;
   const pct=db>0?(projects.length/db*100).toFixed(2):'—';
   const fund=projects.reduce((s,p)=>s+(p.ec_grant_num||0),0);
-  document.getElementById('s-total').textContent  =db.toLocaleString();
-  document.getElementById('s-matched').textContent=projects.length.toLocaleString();
-  document.getElementById('s-pct').textContent    =`${pct}%`;
-  document.getElementById('s-fund').textContent   =fmtEuro(fund);
+  // Total funding across all matched projects (respecting source filter)
+  let totalFund=0;
+  if(activeSrc==='both')    totalFund=metaFunding.erasmus+metaFunding.cordis;
+  if(activeSrc==='erasmus') totalFund=metaFunding.erasmus;
+  if(activeSrc==='cordis')  totalFund=metaFunding.cordis;
+  const fundPct=totalFund>0?(fund/totalFund*100).toFixed(1):'—';
+  document.getElementById('s-total').textContent    =db.toLocaleString();
+  document.getElementById('s-matched').textContent  =projects.length.toLocaleString();
+  document.getElementById('s-pct').textContent      =`${pct}%`;
+  document.getElementById('s-fund').textContent     =fmtEuro(fund);
+  document.getElementById('s-fund-total').textContent=fmtEuro(totalFund);
+  document.getElementById('s-fund-pct').textContent =`${fundPct}%`;
 }
 
 // ══════════════════════════════════════════════════════════════════════════
