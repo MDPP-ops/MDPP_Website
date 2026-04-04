@@ -227,8 +227,12 @@ svg#graph-svg{cursor:default}
   <div class="vsep"></div>
 
   <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#8b949e;cursor:pointer;white-space:nowrap;user-select:none">
-    <input type="checkbox" id="labelsToggle" style="accent-color:#58a6ff;width:12px;height:12px">
-    Labels
+    <input type="checkbox" id="orgLabelsToggle" style="accent-color:#fb923c;width:12px;height:12px">
+    Partner labels
+  </label>
+  <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#8b949e;cursor:pointer;white-space:nowrap;user-select:none">
+    <input type="checkbox" id="projLabelsToggle" style="accent-color:#a78bfa;width:12px;height:12px">
+    Project labels
   </label>
   <div class="vsep"></div>
   <input id="searchBox" type="search" placeholder="Search… (Enter to lock)">
@@ -355,7 +359,8 @@ let selectedOrg  = null;
 let simulation   = null;
 let activePanel  = 'proj';
 let orgFilter    = '';
-let showLabels   = false;
+let showOrgLabels  = false;
+let showProjLabels = false;
 let pinnedNode   = null;
 let neighborMap  = new Map();
 let yearMin      = 2014;
@@ -952,6 +957,25 @@ function buildAdjacency(links){
   });
 }
 
+// 2-level neighbourhood: given a node id, return all ids within 2 hops
+function getNeighbours2(fid){
+  const level1=neighborMap.get(fid)||new Set();
+  const all=new Set(level1);
+  all.add(fid);
+  for(const n1 of level1){
+    const level2=neighborMap.get(n1)||new Set();
+    for(const n2 of level2) all.add(n2);
+  }
+  return all;
+}
+
+// Links that connect any two nodes in a set
+function isLinkInSet(d, nodeSet){
+  const s=typeof d.source==='object'?d.source.id:d.source;
+  const t=typeof d.target==='object'?d.target.id:d.target;
+  return nodeSet.has(s) && nodeSet.has(t);
+}
+
 function applyHoverPreview(focusDatum){
   if(!_nodeSel||!_linkSel) return;
   if(!focusDatum){
@@ -971,17 +995,23 @@ function applyHoverPreview(focusDatum){
 function updatePinLabels(focusDatum){
   if(!_labelSel||!_projLabelSel) return;
   if(!focusDatum){
-    _labelSel.style('display', showLabels ? null : 'none');
-    _projLabelSel.style('display', 'none');
+    // No pin — revert to toggle state
+    _labelSel.style('display', showOrgLabels ? null : 'none');
+    _projLabelSel.style('display', showProjLabels ? null : 'none');
     return;
   }
-  const fid=focusDatum.id;
-  const nbrs=neighborMap.get(fid)||new Set();
+  // 2-level neighbourhood for labels
+  const visible=getNeighbours2(focusDatum.id);
+  // Org labels: show for visible nodes in neighbourhood (or all if toggle on)
   _labelSel.style('display', d=>{
-    if(showLabels) return null;
-    return nbrs.has(d.id) ? null : 'none';
+    if(showOrgLabels) return null;
+    return visible.has(d.id) ? null : 'none';
   });
-  _projLabelSel.style('display', d=> d.id===fid ? null : 'none');
+  // Project labels: show for visible project nodes in neighbourhood (or all if toggle on)
+  _projLabelSel.style('display', d=>{
+    if(showProjLabels) return null;
+    return visible.has(d.id) ? null : 'none';
+  });
 }
 
 function applyHoverHighlight(focusDatum){
@@ -992,21 +1022,14 @@ function applyHoverHighlight(focusDatum){
     updatePinLabels(null);
     return;
   }
-  const fid=focusDatum.id;
-  const nbrs=neighborMap.get(fid)||new Set();
+  // 2-level expansion: show the clicked node + its neighbours + THEIR neighbours
+  const visible=getNeighbours2(focusDatum.id);
   _nodeSel
-    .classed('h-lit', d=> d.id===fid || nbrs.has(d.id))
-    .classed('h-dim', d=> d.id!==fid && !nbrs.has(d.id))
+    .classed('h-lit', d=> visible.has(d.id))
+    .classed('h-dim', d=> !visible.has(d.id))
     .classed('h-pin', d=> d===pinnedNode);
-  _linkSel.classed('h-lit',d=>{
-    const s=typeof d.source==='object'?d.source.id:d.source;
-    const t=typeof d.target==='object'?d.target.id:d.target;
-    return s===fid||t===fid;
-  }).classed('h-dim',d=>{
-    const s=typeof d.source==='object'?d.source.id:d.source;
-    const t=typeof d.target==='object'?d.target.id:d.target;
-    return s!==fid&&t!==fid;
-  });
+  _linkSel.classed('h-lit',d=> isLinkInSet(d, visible))
+          .classed('h-dim',d=> !isLinkInSet(d, visible));
   updatePinLabels(focusDatum);
 }
 
@@ -1089,9 +1112,9 @@ function render(){
     .attr('dy',d=>-(d.r+3))
     .style('pointer-events','none')
     .style('user-select','none')
-    .style('display', showLabels ? null : 'none');
+    .style('display', showOrgLabels ? null : 'none');
 
-  // Project labels (pinned only)
+  // Project labels
   const projLabelSel=g.append('g').selectAll('text')
     .data(nodes.filter(d=>d.type==='project'))
     .enter().append('text')
@@ -1108,7 +1131,7 @@ function render(){
     .attr('dy',d=>-(d.r+3))
     .style('pointer-events','none')
     .style('user-select','none')
-    .style('display','none');
+    .style('display', showProjLabels ? null : 'none');
 
   _nodeSel=nodeSel; _linkSel=linkSel; _labelSel=labelSel; _projLabelSel=projLabelSel;
   applyGraphHighlight();
@@ -1298,14 +1321,21 @@ scEl.addEventListener('click',()=>{
   updateFill();
 })();
 
-// Labels toggle
-document.getElementById('labelsToggle').addEventListener('change',e=>{
-  showLabels=e.target.checked;
+// Label toggles
+document.getElementById('orgLabelsToggle').addEventListener('change',e=>{
+  showOrgLabels=e.target.checked;
   if(pinnedNode){
     updatePinLabels(pinnedNode);
   } else {
-    if(_labelSel)     _labelSel.style('display', showLabels ? null : 'none');
-    if(_projLabelSel) _projLabelSel.style('display', 'none');
+    if(_labelSel) _labelSel.style('display', showOrgLabels ? null : 'none');
+  }
+});
+document.getElementById('projLabelsToggle').addEventListener('change',e=>{
+  showProjLabels=e.target.checked;
+  if(pinnedNode){
+    updatePinLabels(pinnedNode);
+  } else {
+    if(_projLabelSel) _projLabelSel.style('display', showProjLabels ? null : 'none');
   }
 });
 
