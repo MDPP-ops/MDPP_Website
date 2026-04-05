@@ -224,6 +224,13 @@ svg#graph-svg{cursor:default}
   <div class="stat s-count">Projects: <b id="s-matched">—</b></div>
   <div class="stat s-fund">Funding: <b id="s-fund">—</b> <span style="color:#8b949e;font-size:10px">of <b id="s-fund-total">—</b></span> (<b id="s-fund-pct" style="color:#d2a8ff">—</b>)</div>
   <div class="stat">Excluded: <b id="s-excluded" style="color:#f85149">0</b></div>
+  <div class="stat" id="s-pin-wrap" style="display:none;border-left:2px solid #3fb950;padding-left:7px">
+    📌 <b id="s-pin-name" style="color:#e6edf3;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:bottom"></b>
+    <span style="color:#8b949e;font-size:10px">·</span>
+    <b id="s-pin-fund" style="color:#d2a8ff">—</b>
+    <span style="color:#8b949e;font-size:10px">of <b id="s-pin-total">—</b></span>
+    (<b id="s-pin-pct" style="color:#3fb950">—</b>)
+  </div>
   <div class="vsep"></div>
 
   <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#8b949e;cursor:pointer;white-space:nowrap;user-select:none">
@@ -632,7 +639,15 @@ async function loadData() {
     projects.forEach(p=>{
       p._src='nwo';
       p.title_en=p.title||'';
-      p.ec_grant_num=0; // NWO has no funding amounts in this dataset
+      // Estimate NWO grant amount from funding scheme name
+      // Official SIA/NWO typical award levels (approximate):
+      const scheme=(p.funding_scheme||'').toLowerCase();
+      if     (scheme.startsWith('raak-pro'))    p.ec_grant_num=700000;
+      else if(scheme.startsWith('raak-mkb'))    p.ec_grant_num=400000;
+      else if(scheme.startsWith('raak-publiek'))p.ec_grant_num=300000;
+      else if(scheme.startsWith('kiem'))         p.ec_grant_num=40000;
+      else                                       p.ec_grant_num=300000;
+      p._grant_estimated = true;  // all NWO amounts are estimated
       const members=p.project_members||[];
       const pi=members.find(m=>/main applicant/i.test(m.role||''))
               ||members.find(m=>/project leader/i.test(m.role||''))
@@ -767,6 +782,53 @@ function updateStats(projects) {
   document.getElementById('s-fund-total').textContent=fmtEuro(totalFund);
   document.getElementById('s-fund-pct').textContent =`${fundPct}%`;
   document.getElementById('s-excluded').textContent =excludedIds.size.toString();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// PINNED NODE FUNDING STAT
+// ══════════════════════════════════════════════════════════════════════════
+function updatePinStats(focusDatum) {
+  const wrap = document.getElementById('s-pin-wrap');
+  if(!focusDatum){ wrap.style.display='none'; return; }
+
+  // Total funding across all currently visible (filtered) projects
+  const visibleProjects = filteredProjects();
+  const totalFund = visibleProjects.reduce((s,p)=>s+(p.ec_grant_num||0), 0);
+
+  let pinFund = 0;
+  let pinName = '';
+  let hasEstimate = false;
+
+  if(focusDatum.type === 'project'){
+    const p = focusDatum.data;
+    pinFund = p.ec_grant_num || 0;
+    hasEstimate = !!p._grant_estimated;
+    pinName = p._display_name || p.title_en || '';
+  } else if(focusDatum.type === 'org'){
+    // Sum funding from all visible projects this org is connected to
+    pinName = focusDatum.label || '';
+    const orgLabel = focusDatum.label;
+    for(const p of visibleProjects){
+      const members = p.project_members || [];
+      const inProject = members.some(m => {
+        const raw = (m.organisation||m.name||'').split('||')[0].trim();
+        return normaliseOrgName(raw) === orgLabel;
+      });
+      if(inProject){
+        pinFund += p.ec_grant_num || 0;
+        if(p._grant_estimated) hasEstimate = true;
+      }
+    }
+  }
+
+  const pct = totalFund > 0 ? (pinFund/totalFund*100).toFixed(1) : '—';
+  const fundStr = (hasEstimate ? '~' : '') + fmtEuro(pinFund);
+
+  document.getElementById('s-pin-name').textContent = pinName.slice(0,30);
+  document.getElementById('s-pin-fund').textContent = fundStr;
+  document.getElementById('s-pin-total').textContent = fmtEuro(totalFund);
+  document.getElementById('s-pin-pct').textContent = `${pct}%`;
+  wrap.style.display = '';
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1167,6 +1229,7 @@ function applyHoverHighlight(focusDatum){
     _nodeSel.classed('h-dim',false).classed('h-lit',false).classed('h-pin',false);
     _linkSel.classed('h-dim',false).classed('h-lit',false);
     updatePinLabels(null);
+    updatePinStats(null);
     return;
   }
   // 2-level expansion: show the clicked node + its neighbours + THEIR neighbours
@@ -1178,6 +1241,7 @@ function applyHoverHighlight(focusDatum){
   _linkSel.classed('h-lit',d=> isLinkInSet(d, visible))
           .classed('h-dim',d=> !isLinkInSet(d, visible));
   updatePinLabels(focusDatum);
+  updatePinStats(focusDatum);
 }
 
 function clearHoverHighlight(){
