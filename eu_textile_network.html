@@ -257,11 +257,22 @@ svg#graph-svg{cursor:default}
   <div class="stat s-count">DB: <b id="s-total">—</b></div>
   <div class="stat s-pct">Matched: <b id="s-matched">—</b> (<b id="s-pct">—</b>)</div>
   <div class="stat s-fund">Funding: <b id="s-fund">—</b> <span style="color:#8b949e;font-size:10px">of <b id="s-fund-total">—</b></span> (<b id="s-fund-pct" style="color:#d2a8ff">—</b>)</div>
+  <div class="stat" id="s-pin-wrap" style="display:none;border-left:2px solid #3fb950;padding-left:7px">
+    📌 <b id="s-pin-name" style="color:#e6edf3;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:bottom"></b>
+    <span style="color:#8b949e;font-size:10px">·</span>
+    <b id="s-pin-fund" style="color:#d2a8ff">—</b>
+    <span style="color:#8b949e;font-size:10px">of <b id="s-pin-total">—</b></span>
+    (<b id="s-pin-pct" style="color:#3fb950">—</b>)
+  </div>
   <div class="vsep"></div>
 
   <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#8b949e;cursor:pointer;white-space:nowrap;user-select:none">
-    <input type="checkbox" id="labelsToggle" style="accent-color:#58a6ff;width:12px;height:12px">
-    Labels
+    <input type="checkbox" id="orgLabelsToggle" style="accent-color:#fb923c;width:12px;height:12px">
+    Partner labels
+  </label>
+  <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#8b949e;cursor:pointer;white-space:nowrap;user-select:none">
+    <input type="checkbox" id="projLabelsToggle" style="accent-color:#f72585;width:12px;height:12px">
+    Project labels
   </label>
   <div class="vsep"></div>
   <input id="searchBox" type="search" placeholder="Search… (Enter to lock)">
@@ -388,7 +399,8 @@ let selectedOrg  = null;            // name of selected NL org
 let simulation   = null;
 let activePanel  = 'proj';          // 'proj' | 'orgs'
 let orgFilter    = '';
-let showLabels   = false;           // labels off by default
+let showOrgLabels  = false;
+let showProjLabels = false;
 let pinnedNode   = null;            // datum of the currently pinned (clicked) node
 let neighborMap  = new Map();       // nodeId → Set<neighborId> (rebuilt each render)
 let yearMin      = 2014;            // inclusive lower bound — captures all H2020
@@ -930,6 +942,24 @@ function buildAdjacency(links){
   });
 }
 
+// 2-level neighbourhood: given a node id, return all ids within 2 hops
+function getNeighbours2(fid){
+  const level1=neighborMap.get(fid)||new Set();
+  const all=new Set(level1);
+  all.add(fid);
+  for(const n1 of level1){
+    const level2=neighborMap.get(n1)||new Set();
+    for(const n2 of level2) all.add(n2);
+  }
+  return all;
+}
+
+function isLinkInSet(d, nodeSet){
+  const s=typeof d.source==='object'?d.source.id:d.source;
+  const t=typeof d.target==='object'?d.target.id:d.target;
+  return nodeSet.has(s) && nodeSet.has(t);
+}
+
 // HOVER PREVIEW — brighten connected links only, no background dimming
 function applyHoverPreview(focusDatum){
   if(!_nodeSel||!_linkSel) return;
@@ -944,31 +974,69 @@ function applyHoverPreview(focusDatum){
     const t=typeof d.target==='object'?d.target.id:d.target;
     return s===fid||t===fid;
   });
-  // Glow only the hovered node itself, nothing else
   _nodeSel.classed('h-pin', d=> d===focusDatum);
 }
 
-// UPDATE LABELS — show for pinned neighbourhood only (or all if checkbox on)
+// UPDATE LABELS — show for 2-level pinned neighbourhood
 function updatePinLabels(focusDatum){
   if(!_labelSel||!_projLabelSel) return;
   if(!focusDatum){
-    // No pin — revert to checkbox state
-    _labelSel.style('display', showLabels ? null : 'none');
-    _projLabelSel.style('display', 'none');
+    _labelSel.style('display', showOrgLabels ? null : 'none');
+    _projLabelSel.style('display', showProjLabels ? null : 'none');
     return;
   }
-  const fid=focusDatum.id;
-  const nbrs=neighborMap.get(fid)||new Set();
-  // Org/country labels: show for neighbours of pinned node (or all if checkbox)
+  const visible=getNeighbours2(focusDatum.id);
   _labelSel.style('display', d=>{
-    if(showLabels) return null;  // checkbox overrides — always show
-    return nbrs.has(d.id) ? null : 'none';
+    if(showOrgLabels) return null;
+    return visible.has(d.id) ? null : 'none';
   });
-  // Project labels: show only for the pinned project node
-  _projLabelSel.style('display', d=> d.id===fid ? null : 'none');
+  _projLabelSel.style('display', d=>{
+    if(showProjLabels) return null;
+    return visible.has(d.id) ? null : 'none';
+  });
 }
 
-// PIN HIGHLIGHT — full dim of unrelated nodes + links, used on click
+// PINNED FUNDING STAT
+function updatePinStats(focusDatum){
+  const wrap=document.getElementById('s-pin-wrap');
+  if(!focusDatum){ wrap.style.display='none'; return; }
+
+  const visibleProjects=filteredProjects();
+  const totalFund=visibleProjects.reduce((s,p)=>s+(p.ec_grant_num||0),0);
+
+  let pinFund=0, pinName='';
+  if(focusDatum.type==='project'){
+    const p=focusDatum.data;
+    pinFund=p.ec_grant_num||0;
+    pinName=p._display_name||p.title_en||'';
+  } else if(focusDatum.type==='org'){
+    pinName=focusDatum.label||'';
+    const orgLabel=focusDatum.label;
+    const COORD_ROLES=new Set(['coordinator','lead','coordinating institution']);
+    const isCoordRole=r=>COORD_ROLES.has((r||'').toLowerCase().replace(/[_-]/g,' ').trim());
+    for(const p of visibleProjects){
+      const inProject=(p.project_members||[]).some(m=>{
+        const n=(m.organisation||m.name||'').split('||')[0].trim();
+        return n===orgLabel;
+      });
+      if(inProject) pinFund+=p.ec_grant_num||0;
+    }
+  } else if(focusDatum.type==='country'){
+    pinName=focusDatum.label||'';
+    for(const p of visibleProjects){
+      if((p._pi_country||'')===(focusDatum.label||'')) pinFund+=p.ec_grant_num||0;
+    }
+  }
+
+  const pct=totalFund>0?(pinFund/totalFund*100).toFixed(1):'—';
+  document.getElementById('s-pin-name').textContent=pinName.slice(0,30);
+  document.getElementById('s-pin-fund').textContent=fmtEuro(pinFund);
+  document.getElementById('s-pin-total').textContent=fmtEuro(totalFund);
+  document.getElementById('s-pin-pct').textContent=`${pct}%`;
+  wrap.style.display='';
+}
+
+// PIN HIGHLIGHT — full dim of unrelated nodes + links, 2-level expansion
 function applyHoverHighlight(focusDatum){
   if(!_nodeSel||!_linkSel) return;
 
@@ -976,28 +1044,20 @@ function applyHoverHighlight(focusDatum){
     _nodeSel.classed('h-dim',false).classed('h-lit',false).classed('h-pin',false);
     _linkSel.classed('h-dim',false).classed('h-lit',false);
     updatePinLabels(null);
+    updatePinStats(null);
     return;
   }
 
-  const fid=focusDatum.id;
-  const nbrs=neighborMap.get(fid)||new Set();
-
+  const visible=getNeighbours2(focusDatum.id);
   _nodeSel
-    .classed('h-lit', d=> d.id===fid || nbrs.has(d.id))
-    .classed('h-dim', d=> d.id!==fid && !nbrs.has(d.id))
+    .classed('h-lit', d=> visible.has(d.id))
+    .classed('h-dim', d=> !visible.has(d.id))
     .classed('h-pin', d=> d===pinnedNode);
-
-  _linkSel.classed('h-lit',d=>{
-    const s=typeof d.source==='object'?d.source.id:d.source;
-    const t=typeof d.target==='object'?d.target.id:d.target;
-    return s===fid||t===fid;
-  }).classed('h-dim',d=>{
-    const s=typeof d.source==='object'?d.source.id:d.source;
-    const t=typeof d.target==='object'?d.target.id:d.target;
-    return s!==fid&&t!==fid;
-  });
+  _linkSel.classed('h-lit',d=> isLinkInSet(d,visible))
+          .classed('h-dim',d=> !isLinkInSet(d,visible));
 
   updatePinLabels(focusDatum);
+  updatePinStats(focusDatum);
 }
 
 function clearHoverHighlight(){
@@ -1086,7 +1146,7 @@ function render(){
     .attr('dy',d=>-(Math.min(7+Math.sqrt(d.count||1)*1.8,24)+3))
     .style('pointer-events','none')
     .style('user-select','none')
-    .style('display', showLabels ? null : 'none');
+    .style('display', showOrgLabels ? null : 'none');
 
   // Project labels — only shown for pinned node
   const projLabelSel=g.append('g').selectAll('text')
@@ -1099,7 +1159,7 @@ function render(){
     .attr('dy',-9)
     .style('pointer-events','none')
     .style('user-select','none')
-    .style('display','none');
+    .style('display', showProjLabels ? null : 'none');
 
   _nodeSel=nodeSel; _linkSel=linkSel; _labelSel=labelSel; _projLabelSel=projLabelSel;
   applyGraphHighlight();
@@ -1301,15 +1361,23 @@ scEl.addEventListener('click',()=>{
   updateFill();   // draw initial fill
 })();
 
-// Labels toggle
-document.getElementById('labelsToggle').addEventListener('change',e=>{
-  showLabels=e.target.checked;
-  // Re-apply label visibility respecting pin state
+// Partner labels toggle
+document.getElementById('orgLabelsToggle').addEventListener('change',e=>{
+  showOrgLabels=e.target.checked;
   if(pinnedNode){
     updatePinLabels(pinnedNode);
   } else {
-    if(_labelSel)     _labelSel.style('display', showLabels ? null : 'none');
-    if(_projLabelSel) _projLabelSel.style('display', 'none');
+    if(_labelSel) _labelSel.style('display', showOrgLabels ? null : 'none');
+  }
+});
+
+// Project labels toggle
+document.getElementById('projLabelsToggle').addEventListener('change',e=>{
+  showProjLabels=e.target.checked;
+  if(pinnedNode){
+    updatePinLabels(pinnedNode);
+  } else {
+    if(_projLabelSel) _projLabelSel.style('display', showProjLabels ? null : 'none');
   }
 });
 
