@@ -161,13 +161,15 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0d1117;c
 .link-partner{stroke:#3a4060;stroke-width:1;opacity:0.45}
 .link-country{stroke:#484f58;stroke-width:1;opacity:0.35}
 
-/* All project nodes → magenta (programme shown via badge/toggle, not colour) */
-.node-erasmus,.node-he,.node-h2020{fill:#b5179e;stroke:#f72585;stroke-width:1.5}
+/* Project nodes — cool tones per programme */
+.node-erasmus{fill:#065f46;stroke:#34d399;stroke-width:1.5}
+.node-he     {fill:#1e40af;stroke:#60a5fa;stroke-width:1.5}
+.node-h2020  {fill:#1e3a8a;stroke:#93c5fd;stroke-width:1.5}
 /* NL organisations → orange */
 .node-org-nl   {fill:#c2410c;stroke:#fb923c;stroke-width:1.5}
-/* Non-NL organisations → blue */
-.node-org-other{fill:#1d4ed8;stroke:#60a5fa;stroke-width:1}
-/* Country hubs → cyan (distinct from org-blue) */
+/* Non-NL organisations → red (warm, clearly distinct from cool project tones) */
+.node-org-other{fill:#991b1b;stroke:#f87171;stroke-width:1}
+/* Country hubs → cyan */
 .node-country  {fill:#0e7490;stroke:#22d3ee;stroke-width:1.2}
 
 .node-proj{cursor:pointer}
@@ -184,15 +186,15 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0d1117;c
 .node-proj.h-lit,.node-org.h-lit{opacity:1  !important;transition:opacity .15s}
 .link.h-lit                     {opacity:1  !important;stroke-width:2.5!important;transition:opacity .15s,stroke-width .1s}
 /* pin glow adapts to node colour via currentColor */
-.node-proj.h-pin{stroke-width:3.5!important;filter:drop-shadow(0 0 8px #f72585)!important}
+.node-proj.h-pin{stroke-width:3.5!important;filter:drop-shadow(0 0 8px #34d399)!important}
 .node-org-nl.h-pin   {stroke-width:3.5!important;filter:drop-shadow(0 0 8px #fb923c)!important}
-.node-org-other.h-pin{stroke-width:3.5!important;filter:drop-shadow(0 0 8px #60a5fa)!important}
+.node-org-other.h-pin{stroke-width:3.5!important;filter:drop-shadow(0 0 8px #f87171)!important}
 .node-country.h-pin  {stroke-width:3.5!important;filter:drop-shadow(0 0 8px #22d3ee)!important}
 /* cursor hints */
 .node-proj,.node-org{cursor:pointer}
 svg#graph-svg{cursor:default}
 .node-org-nl.org-glow   {stroke-width:3!important;filter:drop-shadow(0 0 7px #fb923c)}
-.node-org-other.org-glow{stroke-width:3!important;filter:drop-shadow(0 0 7px #60a5fa)}
+.node-org-other.org-glow{stroke-width:3!important;filter:drop-shadow(0 0 7px #f87171)}
 .link.link-hi{opacity:0.9!important;stroke-width:2.5!important}
 
 /* ── Tooltip ─────────────────────────────────────────────────────────── */
@@ -271,7 +273,7 @@ svg#graph-svg{cursor:default}
     Partner labels
   </label>
   <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#8b949e;cursor:pointer;white-space:nowrap;user-select:none">
-    <input type="checkbox" id="projLabelsToggle" style="accent-color:#f72585;width:12px;height:12px">
+    <input type="checkbox" id="projLabelsToggle" style="accent-color:#34d399;width:12px;height:12px">
     Project labels
   </label>
   <div class="vsep"></div>
@@ -286,10 +288,11 @@ svg#graph-svg{cursor:default}
   <div id="sidebar">
     <div id="legend">
       <div class="leg-title">Legend</div>
-      <div class="lr"><div class="ldot" style="background:#b5179e;border:1.5px solid #f72585"></div><div class="ll">Project (all programmes)</div></div>
-      <div class="lr" style="margin-left:10px;margin-bottom:0"><span style="font-size:9px;color:#484f58">E+ / HE / H2020 — toggle above</span></div>
+      <div class="lr"><div class="ldot" style="background:#065f46;border:1.5px solid #34d399"></div><div class="ll">Erasmus+ project</div></div>
+      <div class="lr"><div class="ldot" style="background:#1e40af;border:1.5px solid #60a5fa"></div><div class="ll">Horizon Europe project</div></div>
+      <div class="lr"><div class="ldot" style="background:#1e3a8a;border:1.5px solid #93c5fd"></div><div class="ll">H2020 project</div></div>
       <div class="lr" style="margin-top:5px"><div class="ldot" style="background:#c2410c;border:1.5px solid #fb923c"></div><div class="ll" style="color:#fb923c">🇳🇱 NL organisation</div></div>
-      <div class="lr"><div class="ldot" style="background:#1d4ed8;border:1px solid #60a5fa"></div><div class="ll">Non-NL organisation</div></div>
+      <div class="lr"><div class="ldot" style="background:#991b1b;border:1px solid #f87171"></div><div class="ll">Non-NL organisation</div></div>
       <div class="lr"><div class="ldot" style="background:#0e7490;border:1.2px solid #22d3ee"></div><div class="ll">Country hub</div></div>
       <div class="lr" style="margin-top:5px"><div class="lline" style="background:#e3b341"></div><div class="ll">PI / coordinator link</div></div>
       <div class="lr"><div class="lline" style="background:#3a4060"></div><div class="ll">Partner link</div></div>
@@ -1141,7 +1144,7 @@ function render(){
     .enter().append('text')
     .text(d=>(d.label||d.id).slice(0,32))
     .attr('font-size',d=>d.type==='country'?11:9)
-    .attr('fill',d=>d.type==='country'?'#22d3ee':d.isNL?'#fb923c':'#60a5fa')
+    .attr('fill',d=>d.type==='country'?'#22d3ee':d.isNL?'#fb923c':'#f87171')
     .attr('text-anchor','middle')
     .attr('dy',d=>-(Math.min(7+Math.sqrt(d.count||1)*1.8,24)+3))
     .style('pointer-events','none')
@@ -1154,7 +1157,7 @@ function render(){
     .enter().append('text')
     .text(d=>(d.data?._display_name||d.data?.title_en||'').slice(0,36))
     .attr('font-size',8)
-    .attr('fill','#f72585')
+    .attr('fill','#34d399')
     .attr('text-anchor','middle')
     .attr('dy',-9)
     .style('pointer-events','none')
@@ -1211,7 +1214,7 @@ function showTT(e,d){
   } else if(d.type==='country'){
     h=`<div class="tth">${esc(d.label)}</div><div class="tts">${d.count} projects as coordinator</div>`;
   } else {
-    h=`<div class="tth" style="color:${d.isNL?'#fb923c':'#60a5fa'}">${esc(d.label)}</div>
+    h=`<div class="tth" style="color:${d.isNL?'#fb923c':'#f87171'}">${esc(d.label)}</div>
        <div class="tts">${d.isNL?'🇳🇱 NL org':'🌍 Non-NL org'} · ${d.isCoord?'🎯 Coordinator (PI)':'🔗 Partner'} · ${d.count} project${d.count!==1?'s':''}</div>`;
   }
   ttEl.innerHTML=h; ttEl.style.display='block'; moveTT(e);
