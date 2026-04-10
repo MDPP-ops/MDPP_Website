@@ -878,7 +878,7 @@ function buildGraphProj(projects){
     }
     const members=p.project_members||[];
     const coord=members.find(m=>isCoord(m.role));
-    const partners=members.filter(m=>!isCoord(m.role)).slice(0,MAX_PARTNERS_PP);
+    const partners=members.filter(m=>!isCoord(m.role));
 
     const addOrg=(orgName,role,country)=>{
       if(!orgName) return null;

@@ -1110,7 +1110,7 @@ function buildGraph(projects){
     }
     const members=p.project_members||[];
     const coord=members.find(m=>isCoord(m.role, p._src));
-    const partners=members.filter(m=>!isCoord(m.role, p._src)).slice(0,MAX_PARTNERS_PP);
+    const partners=members.filter(m=>!isCoord(m.role, p._src));
 
     const addOrg=(orgRaw,role,country)=>{
       const raw=(orgRaw||'').split('||')[0].trim();
