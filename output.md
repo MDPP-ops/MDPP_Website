@@ -85,7 +85,8 @@ permalink: /outputs/
           <p class="text-secondary mb-4">
             A structured multi-round consultation engaging experts across the textile value chain
             to establish shared, practice-grounded requirements for Digital Product Passports.
-            Includes study design, Round 1 questionnaire, and Round 1 analysis with Round 2 statements.
+            Includes study design, Round 1 questionnaire, Round 1 analysis, Round 2 results, and
+            the Round 3 questionnaire.
           </p>
           <a href="{{ '/outputs/delphi/' | relative_url }}" class="btn btn-primary mt-auto">
             View documents
