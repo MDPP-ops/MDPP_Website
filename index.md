@@ -98,26 +98,24 @@ permalink: /
   </div>
 </section>
 
-<!-- DELPHI ROUND 2 CTA -->
+<!-- DELPHI ROUND 3 CTA -->
 <section class="py-5 border-top" style="background: linear-gradient(135deg, rgba(29,78,216,0.06) 0%, rgba(15,118,110,0.06) 100%);">
   <div class="container">
     <div class="row g-5 align-items-start">
 
       <div class="col-lg-5">
         <div class="section-kicker mb-2">We need your input</div>
-        <h2 class="fw-bold mb-3">Join our stakeholder consultation — Delphi Round 2</h2>
+        <h2 class="fw-bold mb-3">Join our stakeholder consultation — Delphi Round 3</h2>
         <p class="text-secondary mb-3">
-          In Round 1, experts from across the textile value chain shared their views on what
-          Digital Product Passports must require to be both EU-compliant and workable in practice.
-          We have now turned those responses into concrete statements covering five compliance
-          themes: composition &amp; chemical safety, supply chain traceability, recyclability,
-          packaging, and environmental footprint.
+          In Rounds 1 and 2, experts from across the textile value chain identified what Digital
+          Product Passports must require to be both EU-compliant and workable in practice. Round 2
+          showed strong agreement that several requirements are necessary — but serious doubt that
+          they can be met by 2027. Three questions remained unresolved.
         </p>
         <p class="text-secondary mb-4">
-          In Round 2, we ask you to rate each statement — agree, disagree, or add nuance —
-          and see how others in the sector have responded. The results directly inform the
-          development of the M-DPP system. It takes approximately 15&nbsp;minutes and responses
-          are treated anonymously.
+          Round 3 is the final round. It focuses on those four open questions: microfibre data,
+          who should oversee verification, the recyclability timeline, and packaging structure.
+          It takes approximately 10&nbsp;minutes and responses are treated anonymously.
         </p>
         <a href="{{ '/outputs/delphi/' | relative_url }}" class="text-secondary small">
           Read more about the Delphi consultation &rsaquo;
@@ -126,8 +124,8 @@ permalink: /
         <!-- QR code: desktop only -->
         <div class="d-none d-lg-block mt-4">
           <p class="text-secondary small mb-2">Prefer to fill it in on your phone? Scan the QR code:</p>
-          <img src="{{ '/assets/images/delphi_round2_qr.png' | relative_url }}"
-               alt="QR code for Delphi Round 2 questionnaire"
+          <img src="{{ '/assets/images/delphi_round3_qr.png' | relative_url }}"
+               alt="QR code for Delphi Round 3 questionnaire"
                style="width: 140px; height: 140px;">
         </div>
       </div>
@@ -135,7 +133,7 @@ permalink: /
       <div class="col-lg-7">
         <div class="soft-card p-3">
           <iframe
-            src="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=HrsHCfwhb0eIQwLQnOtZp2atyf1JMnFNmZJLUMigK1tURDVZMTc4QUFPVlVOUldJWU5OU1NVT0E5WS4u&embed=true"
+            src="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=HrsHCfwhb0eIQwLQnOtZp2atyf1JMnFNmZJLUMigK1tUQlQxR1lSWjNXNzMwWE1HS1Q5SVNQREZaMy4u&embed=true"
             frameborder="0"
             marginwidth="0"
             marginheight="0"
@@ -149,8 +147,8 @@ permalink: /
         <!-- QR code: mobile only -->
         <div class="d-lg-none text-center mt-3">
           <p class="text-secondary small mb-2">Prefer to fill it in later? Scan to save the link:</p>
-          <img src="{{ '/assets/images/delphi_round2_qr.png' | relative_url }}"
-               alt="QR code for Delphi Round 2 questionnaire"
+          <img src="{{ '/assets/images/delphi_round3_qr.png' | relative_url }}"
+               alt="QR code for Delphi Round 3 questionnaire"
                style="width: 140px; height: 140px;">
         </div>
       </div>
