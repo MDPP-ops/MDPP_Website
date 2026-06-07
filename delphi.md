@@ -150,5 +150,69 @@ permalink: /outputs/delphi/
       </div>
     </div>
 
+    <!-- ROUND 2 ANALYSIS -->
+    <div class="row mb-5">
+      <div class="col-lg-9">
+        <div class="soft-card p-4">
+          <div class="section-kicker mb-2">Round 2 analysis &amp; Round 3 preparation</div>
+          <h3 class="h5 fw-bold mb-3">Round 2 Analysis &amp; Results</h3>
+          <p class="text-secondary mb-3">
+            Round 2 received 11 responses across four stakeholder groups. The analysis examines
+            results across twelve statements covering five compliance themes: composition &amp;
+            chemical safety, supply chain traceability, recyclability, packaging, and environmental
+            footprint.
+          </p>
+          <p class="text-secondary mb-3">
+            Three patterns emerged clearly. Several requirements have near-unanimous normative support
+            but serious feasibility doubts — the panel consistently said "this should happen" while
+            doubting it can happen by 2027. One requirement (microfibre and nanoplastic data) is
+            genuinely contested, with no majority in favour and no respondent finding it feasible.
+            Three questions produced no clear answer and required a further round.
+          </p>
+          <p class="text-secondary mb-4">
+            The document details results per statement, including vote distributions, governance
+            preferences, and open comments, and sets out the key tensions that shape the Round 3
+            questions.
+          </p>
+          <a href="{{ '/assets/documents/delphi_round2_analysis.docx' | relative_url }}"
+             class="btn btn-primary"
+             download>
+            Download Round 2 analysis &amp; results
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROUND 3 QUESTIONNAIRE -->
+    <div class="row mb-5">
+      <div class="col-lg-9">
+        <div class="soft-card p-4">
+          <div class="section-kicker mb-2">Round 3 — Final round</div>
+          <h3 class="h5 fw-bold mb-3">Round 3 Questionnaire — Focused Resolution</h3>
+          <p class="text-secondary mb-3">
+            Round 3 is the third and final round of the M-DPP Delphi consultation. It addresses
+            only the four questions that remained genuinely unresolved after Round 2: the microfibre
+            and nanoplastic data requirement, who should oversee independent verification of DPP
+            claims, the recyclability reporting timeline, and packaging data structure.
+          </p>
+          <p class="text-secondary mb-3">
+            For each question, participants see the Round 2 results first, then answer one focused
+            follow-up. The aim is not to force consensus, but to allow respondents to reconsider
+            in light of how the full panel responded. The questionnaire takes approximately ten
+            minutes to complete.
+          </p>
+          <p class="text-secondary mb-4">
+            The document includes the full question design and methodology notes explaining the
+            rationale for each question format and what was considered and excluded from this round.
+          </p>
+          <a href="{{ '/assets/documents/delphi_round3_questionnaire.docx' | relative_url }}"
+             class="btn btn-primary"
+             download>
+            Download Round 3 questionnaire
+          </a>
+        </div>
+      </div>
+    </div>
+
   </div>
 </section>
