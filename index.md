@@ -110,7 +110,7 @@ permalink: /
           In Rounds 1 and 2, experts from across the textile value chain identified what Digital
           Product Passports must require to be both EU-compliant and workable in practice. Round 2
           showed strong agreement that several requirements are necessary — but serious doubt that
-          they can be met by 2027. Three questions remained unresolved.
+          they can be met by 2027. Four questions remained unresolved.
         </p>
         <p class="text-secondary mb-4">
           Round 3 is the final round. It focuses on those four open questions: microfibre data,
