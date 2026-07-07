@@ -21,8 +21,8 @@ permalink: /outputs/delphi/
           <span class="text-secondary small">Stakeholder Engagement &amp; Policy Alignment: Conducting stakeholder workshops to establish stakeholder perception while prioritizing process simplification (key activity)</span>
         </div>
         <p class="lead mb-0">
-          A structured, multi-round stakeholder consultation to establish shared, practice-grounded
-          requirements for Digital Product Passports across the textile value chain.
+          A structured, three-round stakeholder consultation to establish shared, practice-grounded
+          requirements for Digital Product Passports across the textile value chain — now complete.
         </p>
       </div>
     </div>
@@ -38,16 +38,30 @@ permalink: /outputs/delphi/
         <p class="text-secondary">
           Stakeholders across the textile value chain currently lack a shared understanding of what
           Digital Product Passports must actually require in order to be both compliant with emerging
-          EU regulations and workable in everyday practice. The M-DPP project uses the Delphi method
-          to bridge that gap — engaging experts systematically across multiple rounds to identify
+          EU regulations and workable in everyday practice. The M-DPP project used the Delphi method
+          to bridge that gap — engaging experts systematically across three rounds to identify
           areas of agreement, surface genuine disagreement, and establish a common baseline for the
           development of the M-DPP system.
         </p>
-        <p class="text-secondary mb-0">
-          The panel brings together four stakeholder groups: the supply chain (brands, retailers,
+        <p class="text-secondary">
+          The panel brought together four stakeholder groups: the supply chain (brands, retailers,
           manufacturers, processors, raw material producers), circularity &amp; end-of-life operators,
-          technology &amp; data specialists, and policy, research &amp; civil society. All groups receive
-          the same questions and respond anonymously.
+          technology &amp; data specialists, and policy, research &amp; civil society. All groups received
+          the same questions and responded anonymously.
+        </p>
+        <p class="text-secondary mb-0">
+          The consultation is now complete. The central finding across all three rounds is a
+          consistent gap between normative agreement and feasibility: the panel repeatedly endorsed
+          DPP requirements — composition data, an open data standard, a recyclability method,
+          microfibre data — while doubting they can be met by 2027. When pressed to choose between
+          the requirement and the timeline, the panel did not abandon the requirements. In both
+          contested cases, the missing element is the same: standardised assessment methods — and
+          the panel locates responsibility for those with regulators and standards bodies, not with
+          individual companies. A second recurring tension concerns the reach of EU-only instruments:
+          the case for global standards bodies (CEN, ISO) rests on supply-chain coverage rather than
+          regulatory authority, and the consultation did not resolve whether enforcement power or
+          global reach matters more. Both are findings. Read the full analysis below, or download
+          the individual round documents to follow the process step by step.
         </p>
       </div>
     </div>
@@ -209,6 +223,39 @@ permalink: /outputs/delphi/
              class="btn btn-primary"
              download>
             Download Round 3 questionnaire
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROUND 3 FINAL ANALYSIS -->
+    <div class="row mb-5">
+      <div class="col-lg-9">
+        <div class="soft-card p-4">
+          <div class="section-kicker mb-2">Round 3 results &amp; full Delphi analysis</div>
+          <h3 class="h5 fw-bold mb-3">Round 3 Results &amp; Final Analysis of the Full Delphi</h3>
+          <p class="text-secondary mb-3">
+            This document presents the Round 3 results and the final analysis across all three rounds.
+            Round 3 received 8 responses. Two of the four unresolved issues reached a clear position;
+            two are documented as persistent disagreements — which, under the Delphi method, are
+            findings in themselves.
+          </p>
+          <p class="text-secondary mb-3">
+            The final analysis maps what was settled and when, traces the central finding — the gap
+            between normative agreement and feasibility — across all three rounds, and documents the
+            full rationale of each camp on the two issues that did not converge. It includes a
+            discussion of the panel's limitations: size, composition change between rounds, the
+            absence of large commercial actors, and the self-selection inherent in voluntary
+            participation.
+          </p>
+          <p class="text-secondary mb-4">
+            This is the primary output of the M-DPP Delphi consultation. The individual round
+            documents above provide the underlying detail.
+          </p>
+          <a href="{{ '/assets/documents/delphi_round3_final_analysis.docx' | relative_url }}"
+             class="btn btn-primary"
+             download>
+            Download Round 3 results &amp; final analysis
           </a>
         </div>
       </div>
