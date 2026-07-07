@@ -83,13 +83,32 @@ permalink: /outputs/
             Stakeholder Engagement &amp; Policy Alignment (key activity)
           </div>
           <p class="text-secondary mb-4">
-            A structured multi-round consultation engaging experts across the textile value chain
-            to establish shared, practice-grounded requirements for Digital Product Passports.
-            Includes study design, Round 1 questionnaire, Round 1 analysis, Round 2 results, and
-            the Round 3 questionnaire.
+            A completed three-round stakeholder consultation engaging experts across the textile
+            value chain to establish shared, practice-grounded requirements for Digital Product
+            Passports. Includes study design, all three rounds of questionnaires and analysis,
+            and a final synthesis of findings.
           </p>
           <a href="{{ '/outputs/delphi/' | relative_url }}" class="btn btn-primary mt-auto">
             View documents
+          </a>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="soft-card p-4 h-100 d-flex flex-column border-top border-primary border-3">
+          <div class="fw-semibold mb-1">DPP Requirement Report</div>
+          <div class="text-secondary small mb-3">
+            <span class="badge bg-primary bg-opacity-10 text-primary fw-normal">WP1 · D1</span>
+            DPP Requirement Report outlining compliance and simplification strategies (deliverable)
+          </div>
+          <p class="text-secondary mb-4">
+            An integrated analysis of the EU regulatory landscape for textile DPPs, the current
+            state of implementation in the EU and the Netherlands, and the findings of the Delphi
+            stakeholder consultation. Translates these three evidence streams into a compliance
+            and implementation strategy, with design recommendations for the M-DPP molecular
+            reference database and software layer.
+          </p>
+          <a href="{{ '/assets/documents/dpp_requirement_report.docx' | relative_url }}" class="btn btn-primary mt-auto" download>
+            Download report
           </a>
         </div>
       </div>
